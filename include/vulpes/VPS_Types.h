@@ -10,3 +10,4 @@ typedef void * VPS_TYPE_ADDRESS;
 typedef unsigned char * VPS_TYPE_DATA;
 
 typedef unsigned long long VPS_TYPE_SIZE;
+typedef long long VPS_TYPE_SPAN;

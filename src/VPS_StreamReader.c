@@ -59,23 +59,28 @@ char VPS_StreamReader_Construct
 			!VPS_Data_Allocate
 			(
 				&item->raw_buffer
-			)
-		)
-		{
-			return 0;
-		}
-		if
-		(
-			!VPS_Data_Construct
-			(
-				item->raw_buffer
 				, PRIVATE_VPS_STREAMREADER_BUFFER_SIZE
 				, 0
 			)
 		)
 		{
-			VPS_Data_Release(item->raw_buffer);
+			return 0;
+		}
+
+		if
+		(
+			!VPS_Data_Construct
+			(
+				item->raw_buffer
+			)
+		)
+		{
+			VPS_Data_Release
+			(
+				item->raw_buffer
+			);
 			item->raw_buffer = 0;
+
 			return 0;
 		}
 		item->own_raw_buffer = 1;
@@ -97,10 +102,12 @@ char VPS_StreamReader_Deconstruct
 		return 0;
 	}
 
-	// Deconstruct and release the internal raw buffer only if we own it.
 	if (item->own_raw_buffer)
 	{
-		VPS_Data_Release(item->raw_buffer);
+		VPS_Data_Deconstruct
+		(
+			item->raw_buffer
+		);
 	}
 
 	item->decoded_buffer = 0;
@@ -121,6 +128,14 @@ char VPS_StreamReader_Release
 		(
 			item
 		);
+
+		if (item->own_raw_buffer)
+		{
+			VPS_Data_Release
+			(
+				item->raw_buffer
+			);
+		}
 		free
 		(
 			item

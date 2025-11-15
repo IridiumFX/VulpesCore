@@ -9,48 +9,65 @@
 char VPS_Data_Allocate
 (
 	struct VPS_Data **item
+	, VPS_TYPE_SIZE size
+	, VPS_TYPE_SIZE limit
 )
 {
+	struct VPS_Data *data;
+
 	if (!item)
 	{
 		return 0;
 	}
 
-	*item = calloc(1, sizeof(struct VPS_Data));
-	if (!*item)
+	data = calloc
+	(
+		1
+		, sizeof(struct VPS_Data)
+	);
+	if (!data)
 	{
 		return 0;
 	}
 
+	if (size > 0)
+	{
+		data->bytes = calloc
+		(
+			1
+			, size
+		);
+		if (!data->bytes && size > 0)
+		{
+			goto cleanup;
+		}
+		data->own_bytes = 1;
+	}
+
+	data->size = size;
+	data->position = 0;
+	data->limit = limit;
+
+	*item = data;
+
 	return 1;
+
+	cleanup:
+
+	VPS_Data_Release(data);
+
+	return 0;
 }
 
 char VPS_Data_Construct
 (
-	struct VPS_Data *item,
-	VPS_TYPE_SIZE size,
-	VPS_TYPE_SIZE limit
+	struct VPS_Data *item
 )
 {
 	if (!item)
 	{
 		return 0;
 	}
-
-	// If re-initializing, deconstruct first to prevent memory leaks.
-	VPS_Data_Deconstruct(item);
-
-	item->bytes = calloc(1, size);
-	if (!item->bytes && size > 0)
-	{
-		return 0;
-	}
-
-	item->own_bytes = 1;
-	item->size = size;
-	// With no offset, position and limit are relative to the start of the buffer.
-	item->position = 0;
-	item->limit = limit;
 
 	return 1;
 }
@@ -65,18 +82,6 @@ char VPS_Data_Deconstruct
 		return 0;
 	}
 
-	if (item->own_bytes && item->bytes)
-	{
-		free(item->bytes);
-	}
-
-	// Reset the struct to a safe, empty state
-	item->bytes = 0;
-	item->own_bytes = 0;
-	item->size = 0;
-	item->position = 0;
-	item->limit = 0;
-
 	return 1;
 }
 
@@ -87,8 +92,15 @@ char VPS_Data_Release
 {
 	if (item)
 	{
-		// Ensure the internal buffer is freed before releasing the struct memory
 		VPS_Data_Deconstruct(item);
+
+		// If we own the buffer, we are responsible for freeing it.
+		if (item->own_bytes && item->bytes)
+		{
+			free(item->bytes);
+			item->bytes = 0;
+		}
+
 		free(item);
 	}
 
@@ -110,7 +122,9 @@ char VPS_Data_Copy
 	}
 
 	// Bounds checking
-	if ((from + size) > item->limit || (to + size) > destination->size)
+	if (size > item->limit || from > item->limit - size || // Check source bounds safely
+		size > destination->size || to > destination->size - size // Check destination bounds safely
+	)
 	{
 		return 0;
 	}
@@ -146,12 +160,12 @@ char VPS_Data_Clone
 		return 0;
 	}
 
-	if (!VPS_Data_Allocate(&clone))
+	if (!VPS_Data_Allocate(&clone, size, size))
 	{
 		return 0;
 	}
 
-	if (!VPS_Data_Construct(clone, size, size))
+	if (!VPS_Data_Construct(clone))
 	{
 		VPS_Data_Release(clone);
 		return 0;
@@ -263,6 +277,11 @@ char VPS_Data_Wrap
 	}
 
 	VPS_Data_Deconstruct(item);
+	if (item->own_bytes && item->bytes)
+	{
+		free(item->bytes);
+		item->bytes = 0;
+	}
 
 	item->bytes = bytes;
 	item->own_bytes = 0; // We do not own this memory
@@ -297,6 +316,7 @@ char VPS_Data_Unwrap
 
 	// Reset the struct to a safe, empty state
 	VPS_Data_Deconstruct(item);
+	item->bytes = 0;
 
 	return 1;
 }
@@ -304,11 +324,11 @@ char VPS_Data_Unwrap
 char VPS_Data_Seek
 (
 	struct VPS_Data *item,
-	VPS_TYPE_SIZE offset,
+	VPS_TYPE_SPAN offset,
 	int whence
 )
 {
-	VPS_TYPE_SIZE new_pos;
+	VPS_TYPE_SPAN new_pos;
 
 	if (!item)
 	{
@@ -318,25 +338,25 @@ char VPS_Data_Seek
 	switch (whence)
 	{
 		case SEEK_SET:
-			new_pos = offset;
+			new_pos = offset; // offset should be positive
 			break;
 		case SEEK_CUR:
-			new_pos = item->position + offset;
+			new_pos = (VPS_TYPE_SPAN)item->position + offset;
 			break;
 		case SEEK_END:
-			new_pos = item->limit + offset; // offset is typically negative here
+			new_pos = (VPS_TYPE_SPAN)item->limit + offset; // offset is typically negative here
 			break;
 		default:
 			return 0; // Invalid 'whence'
 	}
 
 	// Bounds check: position cannot go past the limit
-	if (new_pos > item->limit)
+	if (new_pos < 0 || (VPS_TYPE_SIZE)new_pos > item->limit)
 	{
 		return 0;
 	}
 
-	item->position = new_pos;
+	item->position = (VPS_TYPE_SIZE)new_pos;
 	return 1;
 }
 

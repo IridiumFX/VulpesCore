@@ -27,7 +27,7 @@ static char test_datareader_reads() {
         0xBC, 0x9A, 0x78, 0x56  // 32-bit Little Endian
     };
 
-    VPS_Data_Allocate(&source_data);
+    VPS_Data_Allocate(&source_data, 0, 0);
     VPS_Data_Wrap(source_data, buffer, sizeof(buffer));
 
     VPS_DataReader_Allocate(&reader);

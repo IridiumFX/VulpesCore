@@ -11,13 +11,13 @@ struct VPS_Data
 char VPS_Data_Allocate
 (
 	struct VPS_Data **item
+	, VPS_TYPE_SIZE size
+	, VPS_TYPE_SIZE limit
 );
 
 char VPS_Data_Construct
 (
-	struct VPS_Data *item,
-	VPS_TYPE_SIZE size,
-	VPS_TYPE_SIZE limit
+	struct VPS_Data *item
 );
 
 char VPS_Data_Deconstruct
@@ -56,7 +56,7 @@ char VPS_Data_Resize
 char VPS_Data_Seek
 (
 	struct VPS_Data *item,
-	VPS_TYPE_SIZE offset,
+	VPS_TYPE_SPAN offset,
 	int whence
 );
 

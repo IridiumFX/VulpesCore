@@ -17,18 +17,16 @@ static int failure_count = 0;
 static char test_data_lifecycle() {
     struct VPS_Data *data = 0;
 
-    TEST_ASSERT(VPS_Data_Allocate(&data));
+    TEST_ASSERT(VPS_Data_Allocate(&data, 128, 0));
     TEST_ASSERT(data != 0);
 
-    TEST_ASSERT(VPS_Data_Construct(data, 128, 0));
+    TEST_ASSERT(VPS_Data_Construct(data));
     TEST_ASSERT(data->bytes != 0);
     TEST_ASSERT(data->size == 128);
     TEST_ASSERT(data->limit == 0);
     TEST_ASSERT(data->own_bytes == 1);
 
     TEST_ASSERT(VPS_Data_Deconstruct(data));
-    TEST_ASSERT(data->bytes == 0);
-    TEST_ASSERT(data->size == 0);
 
     VPS_Data_Release(data);
     return 1;
@@ -45,7 +43,7 @@ static char test_data_wrap_unwrap() {
     unsigned char *unwrapped_buffer = 0;
     VPS_TYPE_SIZE unwrapped_size = 0;
 
-    VPS_Data_Allocate(&data);
+    VPS_Data_Allocate(&data, 10, 0);
 
     // Wrap the external buffer
     TEST_ASSERT(VPS_Data_Wrap(data, my_buffer, 32));
@@ -54,9 +52,7 @@ static char test_data_wrap_unwrap() {
     TEST_ASSERT(data->limit == 32);
     TEST_ASSERT(data->own_bytes == 0); // Critical check
 
-    // Deconstructing a wrapped buffer should not free the external memory
     TEST_ASSERT(VPS_Data_Deconstruct(data));
-    TEST_ASSERT(data->bytes == 0);
 
     // Re-wrap to test unwrap
     VPS_Data_Wrap(data, my_buffer, 32);
@@ -75,8 +71,8 @@ static char test_data_wrap_unwrap() {
  */
 static char test_data_compact() {
     struct VPS_Data *data = 0;
-    VPS_Data_Allocate(&data);
-    VPS_Data_Construct(data, 16, 10);
+    VPS_Data_Allocate(&data, 16, 10);
+    VPS_Data_Construct(data);
 
     // Write some data to simulate a partial read
     memcpy(data->bytes, "0123456789ABCDEF", 10);
@@ -106,12 +102,12 @@ static char test_data_compact() {
  */
 static char test_data_copy_and_seek() {
     struct VPS_Data *src = 0, *dest = 0;
-    VPS_Data_Allocate(&src);
-    VPS_Data_Allocate(&dest);
+    VPS_Data_Allocate(&src, 32, 16);
+    VPS_Data_Allocate(&dest, 32, 0);
 
     // 1. Setup source and destination buffers
-    VPS_Data_Construct(src, 32, 16); // size=32, limit=16
-    VPS_Data_Construct(dest, 32, 0); // size=32, limit=0 (initially empty)
+    VPS_Data_Construct(src); // size=32, limit=16
+    VPS_Data_Construct(dest); // size=32, limit=0 (initially empty)
     memcpy(src->bytes, "0123456789ABCDEF", 16);
 
     // 2. Test Copy
@@ -139,12 +135,33 @@ static char test_data_copy_and_seek() {
     TEST_ASSERT(dest->position == 7);
 
     // Seek to 3 bytes from the end
-    TEST_ASSERT(VPS_Data_Seek(dest, -3, SEEK_END));
+    TEST_ASSERT(VPS_Data_Seek(dest, (VPS_TYPE_SPAN)-3, SEEK_END));
     TEST_ASSERT(dest->position == 5);
 
-    // Test invalid seek (past limit)
+    // Seek backward by 2
+    TEST_ASSERT(VPS_Data_Seek(dest, (VPS_TYPE_SPAN)-2, SEEK_CUR));
+    TEST_ASSERT(dest->position == 3);
+
+    // 4. Test Boundary and Invalid Seeks
+    // Seek to the very end (the limit)
+    TEST_ASSERT(VPS_Data_Seek(dest, 0, SEEK_END));
+    TEST_ASSERT(dest->position == 8);
+
+    // Seek to the very beginning
+    TEST_ASSERT(VPS_Data_Seek(dest, (VPS_TYPE_SPAN)-8, SEEK_CUR));
+    TEST_ASSERT(dest->position == 0);
+
+    // Test invalid seek (past limit from current position)
+    TEST_ASSERT(!VPS_Data_Seek(dest, 9, SEEK_CUR));
+    TEST_ASSERT(dest->position == 0); // Position should be unchanged
+
+    // Test invalid seek (past limit from start)
     TEST_ASSERT(!VPS_Data_Seek(dest, 9, SEEK_SET));
-    TEST_ASSERT(dest->position == 5); // Position should be unchanged
+    TEST_ASSERT(dest->position == 0); // Position should be unchanged
+
+    // Test invalid seek (before start from current position)
+    TEST_ASSERT(!VPS_Data_Seek(dest, (VPS_TYPE_SPAN)-1, SEEK_CUR));
+    TEST_ASSERT(dest->position == 0); // Position should be unchanged
 
     VPS_Data_Release(src);
     VPS_Data_Release(dest);
@@ -157,8 +174,8 @@ static char test_data_copy_and_seek() {
  */
 static char test_data_resize() {
     struct VPS_Data *data = 0;
-    VPS_Data_Allocate(&data);
-    VPS_Data_Construct(data, 10, 10);
+    VPS_Data_Allocate(&data, 10, 10);
+    VPS_Data_Construct(data);
     data->position = 8;
 
     // Shrink the buffer. The limit and position should be adjusted.

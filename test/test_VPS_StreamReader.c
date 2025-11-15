@@ -41,8 +41,8 @@ static char test_streamreader_pipeline()
     struct VPS_StreamReader *stream_reader = 0;
     struct VPS_Decoder *pass_through_decoder = 0; // A simple decoder that does nothing
 
-    VPS_Data_Allocate(&dest_buffer);
-    VPS_Data_Construct(dest_buffer, 128, 0);
+    VPS_Data_Allocate(&dest_buffer, 128, 0);
+    VPS_Data_Construct(dest_buffer);
 
     VPS_StreamReader_Allocate(&stream_reader);
     VPS_StreamReader_Construct(stream_reader, dest_buffer, fh, 0, 0);
