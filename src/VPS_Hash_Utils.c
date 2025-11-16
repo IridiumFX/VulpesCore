@@ -2,6 +2,7 @@
 #include <limits.h>
 #include <vulpes/VPS_Types.h>
 #include <vulpes/VPS_Hash_Utils.h>
+#include <vulpes/VPS_Data.h>
 
 // The FNV-1a hash algorithm has different standard "magic" constants for 32-bit
 // and 64-bit hashes.
@@ -38,6 +39,33 @@ char VPS_Hash_Utils_String
 	}
 
 	*key_hash = hash;
+	return 1;
+}
+
+char VPS_Hash_Utils_Data
+(
+	void* key,
+	VPS_TYPE_SIZE* key_hash
+)
+{
+	if (!key || !key_hash)
+	{
+		return 0;
+	}
+
+	struct VPS_Data* data = (struct VPS_Data*)key;
+	VPS_TYPE_SIZE hash = FNV_OFFSET_BASIS;
+	VPS_TYPE_SIZE i;
+
+	// Hash the readable portion of the buffer, from position to limit.
+	for (i = data->position; i < data->limit; ++i)
+	{
+		hash ^= (VPS_TYPE_SIZE)(data->bytes[i]);
+		hash *= FNV_PRIME;
+	}
+
+	*key_hash = hash;
+
 	return 1;
 }
 
