@@ -15,6 +15,7 @@ int main(int argc, char *argv[])
 	RUN_TEST_SUITE(test_suite_VPS_List);
 	RUN_TEST_SUITE(test_suite_VPS_Dictionary);
 	RUN_TEST_SUITE(test_suite_VPS_ScopedDictionary);
+	RUN_TEST_SUITE(test_suite_VPS_Set);
 
 	// Note: The success/failure counts are managed within each suite's file.
 	// A more advanced runner would aggregate these.

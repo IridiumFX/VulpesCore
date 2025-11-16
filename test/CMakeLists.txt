@@ -9,6 +9,7 @@ target_sources(CoreTests PRIVATE
 		test_VPS_StreamReader.c
 		test_VPS_List.c
 		test_VPS_Dictionary.c
+		test_VPS_Set.c
 		test_VPS_ScopedDictionary.c
 )
 

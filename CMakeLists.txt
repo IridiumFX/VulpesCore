@@ -16,6 +16,7 @@ target_sources(VulpesCore PRIVATE
 		src/VPS_Hash_Utils.c
 		src/VPS_Compare_Utils.c
 		src/VPS_Decoder_Base256.c
+		src/VPS_Set.c
 		src/VPS_StreamReader.c
 		src/VPS_ScopedDictionary.c
 		src/VPS_Dictionary.c

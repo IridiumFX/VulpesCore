@@ -27,3 +27,4 @@ void test_suite_VPS_StreamReader(void);
 void test_suite_VPS_List(void);
 void test_suite_VPS_Dictionary(void);
 void test_suite_VPS_ScopedDictionary(void);
+void test_suite_VPS_Set(void);
