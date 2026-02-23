@@ -68,6 +68,8 @@ char VPS_List_Release
 {
 	if (item)
 	{
+		VPS_List_Deconstruct(item);
+
 		free(item);
 	}
 

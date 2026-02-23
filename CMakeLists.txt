@@ -10,6 +10,7 @@ add_library(VulpesCore STATIC)
 target_sources(VulpesCore PRIVATE
 		src/VPS_Data.c
 		src/VPS_DataReader.c
+		src/VPS_DataWriter.c
 		src/VPS_List.c
 		src/VPS_Decoder.c
 		src/VPS_Endian.c
@@ -18,6 +19,7 @@ target_sources(VulpesCore PRIVATE
 		src/VPS_Decoder_Base256.c
 		src/VPS_Set.c
 		src/VPS_StreamReader.c
+		src/VPS_StreamWriter.c
 		src/VPS_ScopedDictionary.c
 		src/VPS_Dictionary.c
 )

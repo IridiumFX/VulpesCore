@@ -46,3 +46,57 @@ VPS_TYPE_64U VPS_Endian_Read64ULE
 (
 	const unsigned char* buffer
 );
+
+/**
+ * @brief Writes a 16-bit unsigned integer into a Big Endian byte buffer.
+ */
+void VPS_Endian_Write16UBE
+(
+	unsigned char* buffer
+	, VPS_TYPE_16U value
+);
+
+/**
+ * @brief Writes a 16-bit unsigned integer into a Little Endian byte buffer.
+ */
+void VPS_Endian_Write16ULE
+(
+	unsigned char* buffer
+	, VPS_TYPE_16U value
+);
+
+/**
+ * @brief Writes a 32-bit unsigned integer into a Big Endian byte buffer.
+ */
+void VPS_Endian_Write32UBE
+(
+	unsigned char* buffer
+	, VPS_TYPE_32U value
+);
+
+/**
+ * @brief Writes a 32-bit unsigned integer into a Little Endian byte buffer.
+ */
+void VPS_Endian_Write32ULE
+(
+	unsigned char* buffer
+	, VPS_TYPE_32U value
+);
+
+/**
+ * @brief Writes a 64-bit unsigned integer into a Big Endian byte buffer.
+ */
+void VPS_Endian_Write64UBE
+(
+	unsigned char* buffer
+	, VPS_TYPE_64U value
+);
+
+/**
+ * @brief Writes a 64-bit unsigned integer into a Little Endian byte buffer.
+ */
+void VPS_Endian_Write64ULE
+(
+	unsigned char* buffer
+	, VPS_TYPE_64U value
+);
