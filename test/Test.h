@@ -28,3 +28,5 @@ void test_suite_VPS_List(void);
 void test_suite_VPS_Dictionary(void);
 void test_suite_VPS_ScopedDictionary(void);
 void test_suite_VPS_Set(void);
+void test_suite_VPS_StreamWriter(void);
+void test_suite_VPS_Endian(void);

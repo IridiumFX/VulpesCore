@@ -11,6 +11,8 @@ target_sources(CoreTests PRIVATE
 		test_VPS_Dictionary.c
 		test_VPS_Set.c
 		test_VPS_ScopedDictionary.c
+		test_VPS_StreamWriter.c
+		test_VPS_Endian.c
 )
 
 # The tests need to include headers from the VulpesCore library.
