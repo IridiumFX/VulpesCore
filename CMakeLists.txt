@@ -22,6 +22,8 @@ target_sources(VulpesCore PRIVATE
 		src/VPS_StreamWriter.c
 		src/VPS_ScopedDictionary.c
 		src/VPS_Dictionary.c
+		src/VPS_ConcurrentDictionary.c
+		src/VPS_SwissDictionary.c
 )
 
 # Define the public include directory.
