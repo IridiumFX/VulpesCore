@@ -16,11 +16,12 @@ char VPS_Compare_Utils_String
 		return 0;
 	}
 
-	*ordering = (VPS_TYPE_16S) strcmp
+	int cmp = strcmp
 	(
 		(const char *) key_1
 		, (const char *) key_2
 	);
+	*ordering = (cmp < 0) ? -1 : (cmp > 0) ? 1 : 0;
 
 	return 1;
 }

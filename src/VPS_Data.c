@@ -225,12 +225,21 @@ char VPS_Data_Expand
 	VPS_TYPE_SIZE delta
 )
 {
+	VPS_TYPE_SIZE new_size;
+
 	if (!item)
 	{
 		return 0;
 	}
 
-	return VPS_Data_Resize(item, item->size + delta);
+	new_size = item->size + delta;
+	if (new_size < item->size)
+	{
+		// Overflow
+		return 0;
+	}
+
+	return VPS_Data_Resize(item, new_size);
 }
 
 char VPS_Data_Compact

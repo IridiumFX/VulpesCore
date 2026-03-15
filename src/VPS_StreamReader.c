@@ -124,16 +124,20 @@ char VPS_StreamReader_Release
 {
 	if (item)
 	{
+		// Save the raw_buffer pointer before Deconstruct nulls it.
+		struct VPS_Data *raw_buffer = item->raw_buffer;
+		char own_raw_buffer = item->own_raw_buffer;
+
 		VPS_StreamReader_Deconstruct
 		(
 			item
 		);
 
-		if (item->own_raw_buffer)
+		if (own_raw_buffer)
 		{
 			VPS_Data_Release
 			(
-				item->raw_buffer
+				raw_buffer
 			);
 		}
 		free

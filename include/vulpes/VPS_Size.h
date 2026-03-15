@@ -1,7 +1,7 @@
 struct VPS_Size
 {
-    VPS_TYPE_U32 width;
-    VPS_TYPE_U32 height;
+    VPS_TYPE_32U width;
+    VPS_TYPE_32U height;
 };
 
-char VPS_Size_Init(struct VPS_Size *size, VPS_TYPE_U32 width, VPS_TYPE_U32 height);
+char VPS_Size_Init(struct VPS_Size *size, VPS_TYPE_32U width, VPS_TYPE_32U height);
