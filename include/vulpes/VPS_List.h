@@ -1,3 +1,4 @@
+#pragma once
 #include <vulpes/VPS_Types.h>
 
 struct VPS_List_Node;

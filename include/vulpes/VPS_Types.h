@@ -1,3 +1,5 @@
+#pragma once
+
 typedef unsigned char VPS_TYPE_8U;
 typedef signed char VPS_TYPE_8S;
 typedef unsigned short VPS_TYPE_16U;

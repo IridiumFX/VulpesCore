@@ -1,3 +1,7 @@
+#pragma once
+#include <vulpes/VPS_Point.h>
+#include <vulpes/VPS_Size.h>
+
 struct VPS_Rect
 {
     struct VPS_Point position;
