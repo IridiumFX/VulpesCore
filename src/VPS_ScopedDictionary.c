@@ -398,12 +398,13 @@ char VPS_ScopedDictionary_LeaveScope
 		if (!entry->versions->head)
 		{
             struct VPS_List* bucket = entry->owner_node->parent;
+            struct VPS_List_Node* owner_node = entry->owner_node;
 
             bucket->node_data_release(entry);
 
-            VPS_List_Node_Remove(entry->owner_node);
-            VPS_List_Node_Deconstruct(entry->owner_node);
-            VPS_List_Node_Release(entry->owner_node);
+            VPS_List_Node_Remove(owner_node);
+            VPS_List_Node_Deconstruct(owner_node);
+            VPS_List_Node_Release(owner_node);
 			item->total_entries --;
 		}
 
