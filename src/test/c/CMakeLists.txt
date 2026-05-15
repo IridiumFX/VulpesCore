@@ -19,7 +19,7 @@ target_sources(CoreTests PRIVATE
 
 # The tests need to include headers from the VulpesCore library.
 target_include_directories(CoreTests PRIVATE
-		../include
+		${CMAKE_SOURCE_DIR}/include
 )
 
 # Link the test executable against the VulpesCore library.

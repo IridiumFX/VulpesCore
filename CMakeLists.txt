@@ -8,22 +8,22 @@ add_library(VulpesCore STATIC)
 
 # Add the source files for this library.
 target_sources(VulpesCore PRIVATE
-		src/VPS_Data.c
-		src/VPS_DataReader.c
-		src/VPS_DataWriter.c
-		src/VPS_List.c
-		src/VPS_Decoder.c
-		src/VPS_Endian.c
-		src/VPS_Hash_Utils.c
-		src/VPS_Compare_Utils.c
-		src/VPS_Decoder_Base256.c
-		src/VPS_Set.c
-		src/VPS_StreamReader.c
-		src/VPS_StreamWriter.c
-		src/VPS_ScopedDictionary.c
-		src/VPS_Dictionary.c
-		src/VPS_ConcurrentDictionary.c
-		src/VPS_SwissDictionary.c
+		src/main/c/VPS_Data.c
+		src/main/c/VPS_DataReader.c
+		src/main/c/VPS_DataWriter.c
+		src/main/c/VPS_List.c
+		src/main/c/VPS_Decoder.c
+		src/main/c/VPS_Endian.c
+		src/main/c/VPS_Hash_Utils.c
+		src/main/c/VPS_Compare_Utils.c
+		src/main/c/VPS_Decoder_Base256.c
+		src/main/c/VPS_Set.c
+		src/main/c/VPS_StreamReader.c
+		src/main/c/VPS_StreamWriter.c
+		src/main/c/VPS_ScopedDictionary.c
+		src/main/c/VPS_Dictionary.c
+		src/main/c/VPS_ConcurrentDictionary.c
+		src/main/c/VPS_SwissDictionary.c
 )
 
 # Define the public include directory.
@@ -33,4 +33,4 @@ target_include_directories(VulpesCore PUBLIC
 		$<INSTALL_INTERFACE:include>
 )
 
-add_subdirectory(test)
+add_subdirectory(src/test/c)

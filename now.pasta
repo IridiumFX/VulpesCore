@@ -1,0 +1,37 @@
+/* VulpesCore — `now` build manifest.
+ *
+ * Foundation library for the Vulpes orbit: VPS_Data, dictionaries
+ * (plain/scoped/concurrent/swiss), streams, list, set, decoders,
+ * hash/compare/endian utilities.
+ *
+ * Layout is Maven-style:
+ *   src/main/c/    16 implementation .c files (flat)
+ *   include/vulpes/ public headers (kept at repo root rather than
+ *                   src/main/h/ so existing `#include <vulpes/...>`
+ *                   keeps resolving via `headers: "include"`)
+ *   src/test/c/    14 entries: 11 test_VPS_*.c + main.c + Test.h
+ *                  + CMakeLists.txt (CMake co-resident with `now`)
+ */
+{
+  group:    "dev.iridium",
+  artifact: "vulpes-core",
+  version:  "0.1.0",
+  description: "VulpesCore — foundation primitives for the Vulpes orbit",
+  license:  "MIT",
+  lang:     "c",
+  std:      "c23",
+
+  sources: {
+    headers: "include"
+    /* No `dir:` — Maven default at src/main/c picks up the 16 .c.
+     * No `include:` — single-tree library, no extras. */
+  },
+
+  output: { type: "static", name: "vulpes_core" },
+
+  compile: {
+    warnings: ["Wall", "Wextra"],
+    includes: ["include", "src/main/c"],
+    defines:  []
+  }
+}
