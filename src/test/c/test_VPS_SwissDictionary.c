@@ -123,12 +123,83 @@ static char test_swiss_dictionary_resize()
 }
 
 
+/**
+ * @test test_swiss_dictionary_lifecycle
+ * @brief The prescribed Deconstruct-then-Release sequence must release each
+ *        entry exactly once (Deconstruct is idempotent).
+ */
+static char test_swiss_dictionary_lifecycle()
+{
+    struct VPS_SwissDictionary *dict = 0;
+    char *key1 = strdup("alpha");
+    int *val1 = (int*)malloc(sizeof(int)); *val1 = 1;
+
+    VPS_SwissDictionary_Allocate(&dict, 16);
+    TEST_ASSERT(dict != NULL);
+    VPS_SwissDictionary_Construct(dict, hash_string, compare_string, release_string, release_int, 2, 75);
+
+    TEST_ASSERT(VPS_SwissDictionary_Add(dict, key1, val1));
+
+    // Deconstruct releases the entries; Release must not release them again.
+    TEST_ASSERT(VPS_SwissDictionary_Deconstruct(dict));
+    TEST_ASSERT(dict->count == 0);
+    VPS_SwissDictionary_Release(dict);
+
+    return 1;
+}
+
+/**
+ * @test test_swiss_dictionary_tombstone_churn
+ * @brief Sustained add/remove churn must keep the table usable: tombstones
+ *        count toward the load factor and are reclaimed by resize.
+ */
+static char test_swiss_dictionary_tombstone_churn()
+{
+    struct VPS_SwissDictionary *dict = 0;
+    char key_buffer[24];
+    void *found_val = NULL;
+
+    VPS_SwissDictionary_Allocate(&dict, 8);
+    TEST_ASSERT(dict != NULL);
+    VPS_SwissDictionary_Construct(dict, hash_string, compare_string, release_string, release_int, 2, 75);
+
+    // Far more add/remove cycles than the table has slots.
+    for (int i = 0; i < 100; ++i) {
+        char *key = (char *)malloc(24);
+        sprintf(key, "churn%d", i);
+        int *val = (int *)malloc(sizeof(int));
+        *val = i;
+        TEST_ASSERT(VPS_SwissDictionary_Add(dict, key, val));
+
+        sprintf(key_buffer, "churn%d", i);
+        TEST_ASSERT(VPS_SwissDictionary_Remove(dict, key_buffer));
+    }
+
+    TEST_ASSERT(dict->count == 0);
+    TEST_ASSERT(!VPS_SwissDictionary_Find(dict, "churn99", &found_val));
+
+    // The table must still accept and find new entries afterwards.
+    {
+        char *key = strdup("survivor");
+        int *val = (int *)malloc(sizeof(int)); *val = 42;
+        TEST_ASSERT(VPS_SwissDictionary_Add(dict, key, val));
+        TEST_ASSERT(VPS_SwissDictionary_Find(dict, "survivor", &found_val));
+        TEST_ASSERT(*((int*)found_val) == 42);
+    }
+
+    VPS_SwissDictionary_Release(dict);
+
+    return 1;
+}
+
 void test_suite_VPS_SwissDictionary() {
     success_count = 0;
     failure_count = 0;
 
     RUN_TEST(test_swiss_dictionary_basic);
     RUN_TEST(test_swiss_dictionary_resize);
+    RUN_TEST(test_swiss_dictionary_lifecycle);
+    RUN_TEST(test_swiss_dictionary_tombstone_churn);
 
     printf("  ----------------------------------\n");
     printf("  VPS_SwissDictionary Summary: %d passed, %d failed\n", success_count, failure_count);

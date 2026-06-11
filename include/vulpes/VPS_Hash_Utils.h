@@ -1,3 +1,6 @@
+#pragma once
+#include <vulpes/VPS_Types.h>
+
 /** @brief A generic string hashing function (FNV-1a). */
 char VPS_Hash_Utils_String
 (

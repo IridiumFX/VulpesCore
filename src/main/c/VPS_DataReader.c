@@ -83,7 +83,7 @@ char VPS_DataReader_Read8U
 {
 	VPS_TYPE_SIZE remaining;
 
-	if (!VPS_DataReader_Remaining(reader, &remaining) || remaining < 1)
+	if (!VPS_DataReader_Remaining(reader, &remaining) || !value || remaining < 1)
 	{
 		return 0;
 	}
@@ -101,7 +101,7 @@ char VPS_DataReader_Read16UBE
 {
 	VPS_TYPE_SIZE remaining;
 
-	if (!VPS_DataReader_Remaining(reader, &remaining) || remaining < 2)
+	if (!VPS_DataReader_Remaining(reader, &remaining) || !value || remaining < 2)
 	{
 		return 0;
 	}
@@ -119,7 +119,7 @@ char VPS_DataReader_Read16ULE
 {
 	VPS_TYPE_SIZE remaining;
 
-	if (!VPS_DataReader_Remaining(reader, &remaining) || remaining < 2)
+	if (!VPS_DataReader_Remaining(reader, &remaining) || !value || remaining < 2)
 	{
 		return 0;
 	}
@@ -137,7 +137,7 @@ char VPS_DataReader_Read16SBE
 {
 	VPS_TYPE_SIZE remaining;
 
-	if (!VPS_DataReader_Remaining(reader, &remaining) || remaining < 2)
+	if (!VPS_DataReader_Remaining(reader, &remaining) || !value || remaining < 2)
 	{
 		return 0;
 	}
@@ -155,7 +155,7 @@ char VPS_DataReader_Read16SLE
 {
 	VPS_TYPE_SIZE remaining;
 
-	if (!VPS_DataReader_Remaining(reader, &remaining) || remaining < 2)
+	if (!VPS_DataReader_Remaining(reader, &remaining) || !value || remaining < 2)
 	{
 		return 0;
 	}
@@ -173,7 +173,7 @@ char VPS_DataReader_Read32UBE
 {
 	VPS_TYPE_SIZE remaining;
 
-	if (!VPS_DataReader_Remaining(reader, &remaining) || remaining < 4)
+	if (!VPS_DataReader_Remaining(reader, &remaining) || !value || remaining < 4)
 	{
 		return 0;
 	}
@@ -191,7 +191,7 @@ char VPS_DataReader_Read32ULE
 {
 	VPS_TYPE_SIZE remaining;
 
-	if (!VPS_DataReader_Remaining(reader, &remaining) || remaining < 4)
+	if (!VPS_DataReader_Remaining(reader, &remaining) || !value || remaining < 4)
 	{
 		return 0;
 	}
@@ -209,7 +209,7 @@ char VPS_DataReader_Read32SBE
 {
 	VPS_TYPE_SIZE remaining;
 
-	if (!VPS_DataReader_Remaining(reader, &remaining) || remaining < 4)
+	if (!VPS_DataReader_Remaining(reader, &remaining) || !value || remaining < 4)
 	{
 		return 0;
 	}
@@ -227,7 +227,7 @@ char VPS_DataReader_Read32SLE
 {
 	VPS_TYPE_SIZE remaining;
 
-	if (!VPS_DataReader_Remaining(reader, &remaining) || remaining < 4)
+	if (!VPS_DataReader_Remaining(reader, &remaining) || !value || remaining < 4)
 	{
 		return 0;
 	}
@@ -245,7 +245,7 @@ char VPS_DataReader_Read64UBE
 {
 	VPS_TYPE_SIZE remaining;
 
-	if (!VPS_DataReader_Remaining(reader, &remaining) || remaining < 8)
+	if (!VPS_DataReader_Remaining(reader, &remaining) || !value || remaining < 8)
 	{
 		return 0;
 	}
@@ -263,7 +263,7 @@ char VPS_DataReader_Read64ULE
 {
 	VPS_TYPE_SIZE remaining;
 
-	if (!VPS_DataReader_Remaining(reader, &remaining) || remaining < 8)
+	if (!VPS_DataReader_Remaining(reader, &remaining) || !value || remaining < 8)
 	{
 		return 0;
 	}
@@ -281,7 +281,7 @@ char VPS_DataReader_Read64SBE
 {
 	VPS_TYPE_SIZE remaining;
 
-	if (!VPS_DataReader_Remaining(reader, &remaining) || remaining < 8)
+	if (!VPS_DataReader_Remaining(reader, &remaining) || !value || remaining < 8)
 	{
 		return 0;
 	}
@@ -299,7 +299,7 @@ char VPS_DataReader_Read64SLE
 {
 	VPS_TYPE_SIZE remaining;
 
-	if (!VPS_DataReader_Remaining(reader, &remaining) || remaining < 8)
+	if (!VPS_DataReader_Remaining(reader, &remaining) || !value || remaining < 8)
 	{
 		return 0;
 	}
@@ -318,9 +318,14 @@ char VPS_DataReader_ReadBytes
 {
 	VPS_TYPE_SIZE remaining;
 
-	if (!VPS_DataReader_Remaining(reader, &remaining) || remaining < size)
+	if (!VPS_DataReader_Remaining(reader, &remaining) || (!buffer && size > 0) || remaining < size)
 	{
 		return 0;
+	}
+
+	if (size == 0)
+	{
+		return 1;
 	}
 
 	memcpy(buffer, reader->source->bytes + reader->source->position, size);

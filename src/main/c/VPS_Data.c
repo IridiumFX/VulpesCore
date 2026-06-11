@@ -15,7 +15,7 @@ char VPS_Data_Allocate
 {
 	struct VPS_Data *data;
 
-	if (!item)
+	if (!item || limit > size)
 	{
 		return 0;
 	}
@@ -37,12 +37,14 @@ char VPS_Data_Allocate
 			1
 			, size
 		);
-		if (!data->bytes && size > 0)
+		if (!data->bytes)
 		{
 			goto cleanup;
 		}
-		data->own_bytes = 1;
 	}
+
+	// Owned even when empty, so a later Resize/Expand may grow the buffer.
+	data->own_bytes = 1;
 
 	data->size = size;
 	data->position = 0;
@@ -154,8 +156,8 @@ char VPS_Data_Clone
 		return 0;
 	}
 
-	// Bounds checking
-	if ((from + size) > source->limit)
+	// Bounds checking (subtraction form, immune to from + size wrapping)
+	if (size > source->limit || from > source->limit - size)
 	{
 		return 0;
 	}
@@ -196,14 +198,23 @@ char VPS_Data_Resize
 		return 0;
 	}
 
-	new_bytes = realloc(item->bytes, new_size);
-	if (!new_bytes && new_size > 0)
+	if (new_size == 0)
 	{
-		// realloc failed, original block is untouched
-		return 0;
+		// realloc(ptr, 0) is undefined in C23; release explicitly instead
+		free(item->bytes);
+		item->bytes = 0;
+	}
+	else
+	{
+		new_bytes = realloc(item->bytes, new_size);
+		if (!new_bytes)
+		{
+			// realloc failed, original block is untouched
+			return 0;
+		}
+		item->bytes = new_bytes;
 	}
 
-	item->bytes = new_bytes;
 	item->size = new_size;
 
 	// Adjust pointers to stay within new bounds
@@ -249,14 +260,19 @@ char VPS_Data_Compact
 {
 	VPS_TYPE_SIZE length;
 
-	if (!item || !item->bytes)
+	if (!item)
 	{
 		return 0;
 	}
 
 	if (item->position == 0)
 	{
-		return 1; // Nothing to do
+		return 1; // Nothing to do (an empty buffer is trivially compact)
+	}
+
+	if (!item->bytes)
+	{
+		return 0;
 	}
 
 	length = item->limit - item->position;
@@ -280,7 +296,7 @@ char VPS_Data_Wrap
 	VPS_TYPE_SIZE size
 )
 {
-	if (!item)
+	if (!item || (!bytes && size > 0))
 	{
 		return 0;
 	}
@@ -326,6 +342,9 @@ char VPS_Data_Unwrap
 	// Reset the struct to a safe, empty state
 	VPS_Data_Deconstruct(item);
 	item->bytes = 0;
+	item->size = 0;
+	item->limit = 0;
+	item->position = 0;
 
 	return 1;
 }
@@ -381,9 +400,14 @@ char VPS_Data_Attach
 		return 0;
 	}
 
-	// Return a pointer to the current write position
+	if (!item->bytes)
+	{
+		return 0;
+	}
+
+	// Return a pointer to the current read position
 	*bytes = item->bytes + item->position;
-	// Return the remaining writable space in the buffer
+	// Return the remaining readable bytes in the window [position, limit)
 	*size = item->limit - item->position;
 
 	return 1;

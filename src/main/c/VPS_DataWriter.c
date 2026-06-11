@@ -12,7 +12,8 @@ static char VPS_DataWriter_PRIVATE_EnsureCapacity
 	, VPS_TYPE_SIZE bytes_needed
 )
 {
-	if (writer->target->limit + bytes_needed > writer->target->size)
+	// Subtraction form: limit <= size always holds, and limit + bytes_needed could wrap
+	if (bytes_needed > writer->target->size - writer->target->limit)
 	{
 		if (!VPS_Data_Expand(writer->target, bytes_needed))
 		{

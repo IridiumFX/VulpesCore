@@ -1,3 +1,6 @@
+#pragma once
+#include <vulpes/VPS_Types.h>
+
 char VPS_Compare_Utils_String
 (
 	void *key_1

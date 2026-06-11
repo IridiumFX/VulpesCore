@@ -1,3 +1,5 @@
+#pragma once
+
 // Forward declarations
 struct VPS_Decoder;
 

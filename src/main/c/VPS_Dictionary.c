@@ -47,6 +47,10 @@ static char VPS_Dictionary_PRIVATE_FindEntry
 	VPS_TYPE_16S ordering;
 	char result;
 
+	// A NULL bucket output tells callers the hash itself failed,
+	// as opposed to a valid lookup that found no entry.
+	*bucket_output = 0;
+
 	result = item->hash(key, &hash);
 	if (!result)
 	{
@@ -174,6 +178,11 @@ char VPS_Dictionary_Allocate
 	struct VPS_Dictionary *subject;
 	VPS_TYPE_SIZE i;
 	char result;
+
+	if (!item)
+	{
+		return 0;
+	}
 
 	if (!buckets)
 	{
@@ -342,9 +351,17 @@ char VPS_Dictionary_Add
 
 	found = VPS_Dictionary_PRIVATE_FindEntry(item, key, &entry, &key_hash, &bucket);
 
+	if (!found && !bucket)
+	{
+		// The hash callback itself failed; nothing was looked up.
+		return 0;
+	}
+
 	if (found)
 	{
-		// Entry found, update data.
+		// Entry found, update data. The key parameter was only borrowed for
+		// the lookup: the entry keeps its original key and the caller keeps
+		// ownership of the passed one.
 		if (item->data_release)
 		{
 			item->data_release(entry->data);
@@ -363,9 +380,21 @@ char VPS_Dictionary_Add
 		entry->data = data;
 		entry->hash = key_hash;
 
-		VPS_List_Node_Allocate(&owner_node);
-		VPS_List_Node_Construct(owner_node, entry);
-		VPS_List_AddTail(bucket, owner_node);
+		if (!VPS_List_Node_Allocate(&owner_node))
+		{
+			free(entry);
+			return 0;
+		}
+		if
+		(
+			!VPS_List_Node_Construct(owner_node, entry)
+			|| !VPS_List_AddTail(bucket, owner_node)
+		)
+		{
+			VPS_List_Node_Release(owner_node);
+			free(entry);
+			return 0;
+		}
 
 		entry->owner_node = owner_node;
 
@@ -396,7 +425,8 @@ char VPS_Dictionary_Remove
 		return 0;
 	}
 
-	// Find the entry. If it doesn't exist, the operation is idempotent.
+	// Find the entry. If it doesn't exist, the operation is idempotent;
+	// a NULL bucket means the hash callback failed, which is an error.
 	if
 	(
 		!VPS_Dictionary_PRIVATE_FindEntry
@@ -409,7 +439,7 @@ char VPS_Dictionary_Remove
 		)
 	)
 	{
-		return 1;
+		return bucket ? 1 : 0;
 	}
 
 	// Save the node pointer before we release the entry it contains.

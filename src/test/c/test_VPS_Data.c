@@ -194,6 +194,69 @@ static char test_data_resize() {
     return 1;
 }
 
+/**
+ * @test test_data_invariants
+ * @brief Verifies the safety invariants: limit cannot exceed size, an
+ *        unwrapped Data is fully reset, and an empty owned Data can grow.
+ */
+static char test_data_invariants() {
+    struct VPS_Data *data = 0;
+    unsigned char my_buffer[8];
+    unsigned char *unwrapped_buffer = 0;
+    VPS_TYPE_SIZE unwrapped_size = 0;
+
+    // limit > size must be rejected
+    TEST_ASSERT(!VPS_Data_Allocate(&data, 10, 100));
+
+    // A zero-size allocation is still owned and can be grown later
+    TEST_ASSERT(VPS_Data_Allocate(&data, 0, 0));
+    TEST_ASSERT(data->own_bytes == 1);
+    TEST_ASSERT(VPS_Data_Resize(data, 16));
+    TEST_ASSERT(data->size == 16);
+    TEST_ASSERT(data->bytes != 0);
+    VPS_Data_Release(data);
+
+    // After Unwrap the struct must be empty, not just bytes = NULL
+    data = 0;
+    TEST_ASSERT(VPS_Data_Allocate(&data, 0, 0));
+    TEST_ASSERT(VPS_Data_Wrap(data, my_buffer, 8));
+    data->position = 3;
+    TEST_ASSERT(VPS_Data_Unwrap(data, &unwrapped_buffer, &unwrapped_size));
+    TEST_ASSERT(data->bytes == 0);
+    TEST_ASSERT(data->size == 0);
+    TEST_ASSERT(data->limit == 0);
+    TEST_ASSERT(data->position == 0);
+
+    // Wrapping NULL bytes with a nonzero size must be rejected
+    TEST_ASSERT(!VPS_Data_Wrap(data, 0, 8));
+
+    VPS_Data_Release(data);
+    return 1;
+}
+
+/**
+ * @test test_data_clone_bounds
+ * @brief Clone must reject ranges whose from + size would wrap or exceed limit.
+ */
+static char test_data_clone_bounds() {
+    struct VPS_Data *src = 0, *clone = 0;
+
+    VPS_Data_Allocate(&src, 16, 16);
+    VPS_Data_Construct(src);
+
+    // In-range clone works
+    TEST_ASSERT(VPS_Data_Clone(&clone, src, 8, 8));
+    TEST_ASSERT(clone->size == 8);
+    VPS_Data_Release(clone);
+
+    // Out-of-range and wrapping ranges are rejected
+    TEST_ASSERT(!VPS_Data_Clone(&clone, src, 8, 9));
+    TEST_ASSERT(!VPS_Data_Clone(&clone, src, 8, (VPS_TYPE_SIZE)-8));
+
+    VPS_Data_Release(src);
+    return 1;
+}
+
 void test_suite_VPS_Data() {
     success_count = 0;
     failure_count = 0;
@@ -203,6 +266,8 @@ void test_suite_VPS_Data() {
     RUN_TEST(test_data_compact);
     RUN_TEST(test_data_copy_and_seek);
     RUN_TEST(test_data_resize);
+    RUN_TEST(test_data_invariants);
+    RUN_TEST(test_data_clone_bounds);
 
     printf("  ----------------------------------\n");
     printf("  VPS_Data Summary: %d passed, %d failed\n", success_count, failure_count);

@@ -1,3 +1,6 @@
+#pragma once
+#include <vulpes/VPS_Types.h>
+
 struct VPS_DataReader
 {
 	struct VPS_Data* source;

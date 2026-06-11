@@ -9,7 +9,7 @@
  * This function copies the available data from the source buffer to the
  * destination buffer, resizing the destination if necessary.
  */
-static char vps_base256_decode
+static char PRIVATE_VPS_Decoder_Base256_Decode
 (
 	struct VPS_Data* source,
 	struct VPS_Data* destination,
@@ -27,13 +27,23 @@ static char vps_base256_decode
 	}
 
 	// 1. Compact the destination buffer to preserve any unconsumed data.
-	VPS_Data_Compact(destination);
+	if (!VPS_Data_Compact(destination))
+	{
+		return 0;
+	}
 
 	bytes_to_copy = source->limit - source->position;
 	VPS_TYPE_SIZE write_pos = destination->limit;
 
-	// Ensure destination has enough capacity
-	if (destination->size < write_pos + bytes_to_copy)
+	// Nothing buffered (e.g. at end of stream) is a successful no-op.
+	if (bytes_to_copy == 0)
+	{
+		*bytes_consumed = 0;
+		return 1;
+	}
+
+	// Ensure destination has enough capacity (subtraction form avoids overflow)
+	if (destination->size - write_pos < bytes_to_copy)
 	{
 		// Attempt to expand the buffer to make room for the new data.
 		if (!VPS_Data_Resize(destination, write_pos + bytes_to_copy))
@@ -43,8 +53,11 @@ static char vps_base256_decode
 	}
 
 	// Copy the new data to the end of the existing valid data in the destination.
-	// The now-robust VPS_Data_Copy will handle updating the destination's limit correctly.
-	VPS_Data_Copy(source, destination, source->position, bytes_to_copy, write_pos);
+	// VPS_Data_Copy updates the destination's limit.
+	if (!VPS_Data_Copy(source, destination, source->position, bytes_to_copy, write_pos))
+	{
+		return 0;
+	}
 
 	// Report that we consumed all available bytes from the source
 	*bytes_consumed = bytes_to_copy;
@@ -63,5 +76,5 @@ char VPS_Decoder_Base256_Construct
 	}
 
 	// Use the generic construction function, providing our private decode implementation.
-	return VPS_Decoder_Construct(decoder, vps_base256_decode);
+	return VPS_Decoder_Construct(decoder, PRIVATE_VPS_Decoder_Base256_Decode);
 }

@@ -1,0 +1,26 @@
+June 2026
+[x] VPS_Types: 32-bit typedefs use int (unsigned long is 64-bit on LP64)
+[x] VPS_Data: enforce limit <= size, own zero-size buffers, overflow-safe
+              Clone bounds, full reset on Unwrap, no realloc(p,0), safer Wrap/Attach
+[x] VPS_DataReader/Writer: overflow-safe capacity check, out-param guards
+[x] VPS_StreamReader: SEEK_CUR accounts for buffered bytes, 64-bit lseek
+                      on Windows, clamped read size, validated decoder consumption
+[x] VPS_StreamWriter: Deconstruct reports flush failures
+[x] VPS_List: data_release honored on Deconstruct; Apply implements
+              exit_on_error=0 (visit all, report first failure)
+[x] VPS_Dictionary/Set: hash-callback failure no longer uses uninitialized
+                        bucket/hash; allocation chains checked; documented key ownership
+[x] VPS_ScopedDictionary: release per-entry versions list (leak), checked
+                          allocations with rollback, idempotent-add consumes duplicate data,
+                          Remove no longer materializes entries for missing keys
+[x] VPS_SwissDictionary: idempotent Deconstruct (double-free on
+                         Deconstruct+Release), tombstone-aware load factor, mixed H1
+[x] VPS_ConcurrentDictionary: mutex destroyed once in Release (UB before),
+                              documented Find pointer lifetime
+[x] VPS_Decoder_Base256: checked Compact/Copy, PRIVATE_ naming
+[x] Headers: pragma once + VPS_Types.h includes where missing. Will move to clean plan9-style next
+[x] Geometry: implement declared VPS_Point/Size/Rect_Init
+[x] Tests: regression testing updates and unbuffered test output
+
+EOF
+

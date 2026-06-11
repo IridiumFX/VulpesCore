@@ -130,6 +130,50 @@ static char test_list_clear_with_releaser() {
     return 1;
 }
 
+static int g_apply_visits = 0;
+
+static char _apply_fail_on_two(struct VPS_List_Node *node, void *context) {
+    (void)context;
+    g_apply_visits++;
+    return (char)((VPS_TYPE_SIZE)node->data != 2);
+}
+
+/**
+ * @test test_list_apply_error_modes
+ * @brief Apply must stop at the first failure when exit_on_error is set, and
+ *        visit every node (still reporting failure) when it is not.
+ */
+static char test_list_apply_error_modes() {
+    struct VPS_List *list = 0;
+    struct VPS_List_Node *nodes[3];
+    struct VPS_List_Node *error_node = 0;
+
+    VPS_List_Allocate(&list);
+    VPS_List_Construct(list, 0, 0, 0);
+
+    for (VPS_TYPE_SIZE i = 0; i < 3; i++) {
+        VPS_List_Node_Allocate(&nodes[i]);
+        VPS_List_Node_Construct(nodes[i], (void*)(i + 1));
+        VPS_List_AddTail(list, nodes[i]);
+    }
+
+    // exit_on_error = 1: stops at node 2
+    g_apply_visits = 0;
+    TEST_ASSERT(!VPS_List_Apply(list, 0, _apply_fail_on_two, 0, 1, &error_node));
+    TEST_ASSERT(g_apply_visits == 2);
+    TEST_ASSERT(error_node == nodes[1]);
+
+    // exit_on_error = 0: visits all three, still reports overall failure
+    g_apply_visits = 0;
+    error_node = 0;
+    TEST_ASSERT(!VPS_List_Apply(list, 0, _apply_fail_on_two, 0, 0, &error_node));
+    TEST_ASSERT(g_apply_visits == 3);
+    TEST_ASSERT(error_node == nodes[1]);
+
+    VPS_List_Release(list);
+    return 1;
+}
+
 void test_suite_VPS_List() {
     success_count = 0;
     failure_count = 0;
@@ -137,6 +181,7 @@ void test_suite_VPS_List() {
     RUN_TEST(test_list_lifecycle);
     RUN_TEST(test_list_add_remove);
     RUN_TEST(test_list_clear_with_releaser);
+    RUN_TEST(test_list_apply_error_modes);
 
     printf("  ----------------------------------\n");
     printf("  VPS_List Summary: %d passed, %d failed\n", success_count, failure_count);

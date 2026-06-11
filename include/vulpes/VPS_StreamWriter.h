@@ -1,3 +1,6 @@
+#pragma once
+#include <vulpes/VPS_Types.h>
+
 /**
  * @brief Provides buffered output to a file handle via write() syscall.
  *

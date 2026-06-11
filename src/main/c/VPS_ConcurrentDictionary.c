@@ -78,10 +78,11 @@ char VPS_ConcurrentDictionary_Deconstruct
         return 0;
     }
 
+    // The mutex must stay valid here: Release re-runs Deconstruct, so the
+    // mutex is destroyed exactly once, in Release.
     pthread_mutex_lock(&item->mutex);
     VPS_Dictionary_Deconstruct(item->dictionary);
     pthread_mutex_unlock(&item->mutex);
-    pthread_mutex_destroy(&item->mutex);
 
     return 1;
 }
@@ -94,6 +95,7 @@ char VPS_ConcurrentDictionary_Release
     if (item)
     {
         VPS_ConcurrentDictionary_Deconstruct(item);
+        pthread_mutex_destroy(&item->mutex);
         VPS_Dictionary_Release(item->dictionary);
         free(item);
     }

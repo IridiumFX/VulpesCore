@@ -4,6 +4,9 @@
 
 int main(int argc, char *argv[])
 {
+	// Unbuffered output so a crashing test still shows how far the run got.
+	setvbuf(stdout, 0, _IONBF, 0);
+
 	printf("=================================\n");
 	printf("  Starting VulpesCore Test Suite \n");
 	printf("=================================\n");

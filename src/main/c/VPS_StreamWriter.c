@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <vulpes/VPS_Types.h>
 #include <vulpes/VPS_Data.h>
@@ -71,16 +72,21 @@ char VPS_StreamWriter_Deconstruct
 	struct VPS_StreamWriter *item
 )
 {
+	char flushed;
+
 	if (!item)
 	{
 		return 0;
 	}
 
-	VPS_StreamWriter_Flush(item);
+	// Report a failed flush so the caller can detect lost buffered data,
+	// but complete the teardown either way. An already-empty buffer is fine.
+	flushed = (item->write_buffer && item->write_buffer->limit == 0)
+		|| VPS_StreamWriter_Flush(item);
 	VPS_Data_Deconstruct(item->write_buffer);
 	item->file_handle = -1;
 
-	return 1;
+	return flushed;
 }
 
 char VPS_StreamWriter_Release

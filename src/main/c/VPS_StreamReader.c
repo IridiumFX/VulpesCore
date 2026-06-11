@@ -6,7 +6,18 @@
 #include <vulpes/VPS_Decoder.h>
 #include <vulpes/VPS_StreamReader.h>
 
+// On Windows, lseek is the 32-bit _lseek; use the 64-bit variant for large files.
+#ifdef _WIN32
+#include <io.h>
+#define PRIVATE_VPS_LSEEK _lseeki64
+#else
+#define PRIVATE_VPS_LSEEK lseek
+#endif
+
 static const VPS_TYPE_SIZE PRIVATE_VPS_STREAMREADER_BUFFER_SIZE = 4096;
+
+// Largest single read() request; the count parameter is 32-bit on some platforms.
+static const VPS_TYPE_SIZE PRIVATE_VPS_STREAMREADER_MAX_READ = 1u << 30;
 
 char VPS_StreamReader_Allocate
 (
@@ -171,10 +182,16 @@ char VPS_StreamReader_Read
 
 	// 1. Compact the internal buffer. This moves any unprocessed data from the
 	// previous read to the beginning of the buffer, making room for new data.
-	VPS_Data_Compact
+	if
 	(
-		item->raw_buffer
-	);
+		!VPS_Data_Compact
+		(
+			item->raw_buffer
+		)
+	)
+	{
+		return 0;
+	}
 
 	// 2. Determine how many bytes we *still* need to read from the OS to
 	//    satisfy the caller's request, after accounting for what's already buffered.
@@ -196,14 +213,22 @@ char VPS_StreamReader_Read
 	}
 
 	// 4. Read the required number of new bytes from the file handle.
+	// Clamp the request: read()'s count parameter is 32-bit on some platforms,
+	// and callers already handle short reads.
 	read_result = 0;
 	if (bytes_still_needed > 0)
 	{
+		VPS_TYPE_SIZE request = bytes_still_needed;
+		if (request > PRIVATE_VPS_STREAMREADER_MAX_READ)
+		{
+			request = PRIVATE_VPS_STREAMREADER_MAX_READ;
+		}
+
 		read_result = read
 		(
 			item->file_handle
 			, item->raw_buffer->bytes + item->raw_buffer->limit
-			, bytes_still_needed
+			, request
 		);
 	}
 
@@ -242,7 +267,11 @@ char VPS_StreamReader_Read
 
 	// 7. Advance the raw buffer's position by the amount the decoder consumed.
 	// The unconsumed data will be handled by Compact() on the next call, creating
-	// a "sliding window" effect.
+	// a "sliding window" effect. Never trust the decoder beyond the buffered window.
+	if (bytes_consumed > item->raw_buffer->limit)
+	{
+		return 0;
+	}
 	item->raw_buffer->position = bytes_consumed;
 
 	if (bytes_consumed_by_decoder)
@@ -277,15 +306,32 @@ char VPS_StreamReader_Seek
 		return 0;
 	}
 
+	// A forward skip that fits inside the buffered window needs no syscall.
+	if (item->raw_buffer && whence == SEEK_CUR && offset >= 0)
+	{
+		VPS_TYPE_64U buffered = item->raw_buffer->limit - item->raw_buffer->position;
+		if ((VPS_TYPE_64U)offset <= buffered)
+		{
+			item->raw_buffer->position += (VPS_TYPE_SIZE)offset;
+			return 1;
+		}
+	}
+
 	// Invalidate internal buffers since we are moving the file pointer.
+	// The OS file pointer is ahead of the logical stream position by the
+	// buffered-but-unconsumed bytes, so a relative seek must subtract them.
 	if (item->raw_buffer)
 	{
+		if (whence == SEEK_CUR)
+		{
+			offset -= (VPS_TYPE_64S)(item->raw_buffer->limit - item->raw_buffer->position);
+		}
 		item->raw_buffer->position = 0;
 		item->raw_buffer->limit = 0;
 	}
 
 	// Attempt a true seek first. This will succeed for files.
-	if (lseek(item->file_handle, offset, whence) != -1)
+	if (PRIVATE_VPS_LSEEK(item->file_handle, offset, whence) != -1)
 	{
 		return 1;
 	}

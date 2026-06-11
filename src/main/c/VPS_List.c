@@ -53,11 +53,19 @@ char VPS_List_Deconstruct
 {
 	if (!item)
 	{
-		return 0; 
+		return 0;
 	}
 
 	VPS_List_Clear(item);
-	
+
+	// Release the user context exactly once; stays idempotent by nulling both.
+	if (item->data_release)
+	{
+		item->data_release(item->data);
+	}
+	item->data = 0;
+	item->data_release = 0;
+
 	return 1;
 }
 
@@ -253,11 +261,12 @@ char VPS_List_Apply
 )
 {
 	struct VPS_List_Node *temp;
+	char all_succeeded;
 	char result;
 
 	if (!item || !fn)
 	{
-		if (exit_on_error && error_node)
+		if (error_node)
 		{
 			*error_node = 0;
 		}
@@ -272,7 +281,7 @@ char VPS_List_Apply
 		temp = start;
 		if (start->parent != item)
 		{
-			if (exit_on_error && error_node)
+			if (error_node)
 			{
 				*error_node = start;
 			}
@@ -280,23 +289,30 @@ char VPS_List_Apply
 		}
 	}
 
+	all_succeeded = 1;
+
 	while (temp)
 	{
 		result = fn(temp, context);
 		if (!result)
 		{
-			if (exit_on_error && error_node)
+			if (all_succeeded && error_node)
 			{
+				// Report the first failing node.
 				*error_node = temp;
 			}
+			all_succeeded = 0;
 
-			return 0;
+			if (exit_on_error)
+			{
+				return 0;
+			}
 		}
 
 		temp = temp->next;
 	}
 
-	return 1;
+	return all_succeeded;
 }
 
 char VPS_List_Find

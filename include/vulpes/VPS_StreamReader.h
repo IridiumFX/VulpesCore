@@ -1,3 +1,6 @@
+#pragma once
+#include <vulpes/VPS_Types.h>
+
 /**
  * @brief Provides a high-level, buffered reader for streaming data from a source.
  *

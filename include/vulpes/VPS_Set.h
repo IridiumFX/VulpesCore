@@ -1,3 +1,6 @@
+#pragma once
+#include <vulpes/VPS_Types.h>
+
 struct VPS_Set_Entry
 {
 	void *item;

@@ -231,6 +231,27 @@ static char test_scoped_dict_multi_level() {
     return 1;
 }
 
+/**
+ * @test test_scoped_dict_remove_missing
+ * @brief Removing a key that was never added must not materialize an entry
+ *        (and must not take ownership of the caller's key).
+ */
+static char test_scoped_dict_remove_missing() {
+    struct VPS_ScopedDictionary *dict = 0;
+    void *found_data = (void*)1;
+
+    VPS_ScopedDictionary_Allocate(&dict, 17);
+    VPS_ScopedDictionary_Construct(dict, VPS_Hash_Utils_String, VPS_Compare_Utils_String, 0, 0, 0, 0, 0, 0);
+
+    TEST_ASSERT(VPS_ScopedDictionary_Remove(dict, "never_added"));
+    TEST_ASSERT(dict->total_entries == 0);
+    TEST_ASSERT(!VPS_ScopedDictionary_Find(dict, "never_added", &found_data));
+
+    VPS_ScopedDictionary_Deconstruct(dict);
+    VPS_ScopedDictionary_Release(dict);
+    return 1;
+}
+
 void test_suite_VPS_ScopedDictionary() {
     success_count = 0;
     failure_count = 0;
@@ -238,6 +259,7 @@ void test_suite_VPS_ScopedDictionary() {
     RUN_TEST(test_scoped_dict_scoping);
     RUN_TEST(test_scoped_dict_remove);
     RUN_TEST(test_scoped_dict_multi_level);
+    RUN_TEST(test_scoped_dict_remove_missing);
 
     printf("  ----------------------------------\n");
     printf("  VPS_ScopedDictionary Summary: %d passed, %d failed\n", success_count, failure_count);

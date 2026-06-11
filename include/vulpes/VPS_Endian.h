@@ -1,3 +1,6 @@
+#pragma once
+#include <vulpes/VPS_Types.h>
+
 
 /**
  * @brief Reads a 16-bit unsigned integer from a Big Endian byte buffer.

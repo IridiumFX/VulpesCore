@@ -29,6 +29,8 @@ struct VPS_SwissDictionary
 
     VPS_TYPE_SIZE capacity;
     VPS_TYPE_SIZE count;
+    // Slots in the DELETED state; they lengthen probe chains until a resize.
+    VPS_TYPE_SIZE tombstones;
 
     VPS_TYPE_SIZE growth_factor;
     VPS_TYPE_SIZE load_percent_threshold;

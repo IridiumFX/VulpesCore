@@ -1,3 +1,6 @@
+#pragma once
+#include <vulpes/VPS_Types.h>
+
 #include <pthread.h>
 #include <vulpes/VPS_Dictionary.h>
 
@@ -35,6 +38,12 @@ char VPS_ConcurrentDictionary_Release
     struct VPS_ConcurrentDictionary *item
 );
 
+/*
+ * The returned data pointer is borrowed: the lock is released before Find
+ * returns, so a concurrent Remove/Add on the same key may release the value
+ * while the caller still holds it. Callers must serialize Find against
+ * mutations of the same key, or store reference-counted values.
+ */
 char VPS_ConcurrentDictionary_Find
 (
     struct VPS_ConcurrentDictionary *item,

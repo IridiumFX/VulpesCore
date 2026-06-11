@@ -3,8 +3,10 @@
 #include <vulpes/VPS_SwissDictionary.h>
 
 #define DEFAULT_CAPACITY 16
-// Use top 7 bits for H1. Assuming 64-bit hash.
-#define H1_SAFE(hash) ((unsigned char)((hash >> (sizeof(VPS_TYPE_SIZE) * 8 - 7)) & 0x7F))
+// Use top 7 bits for H1, after mixing so hashes that only populate their low
+// 32 bits (e.g. the VPS_Hash_Utils integer hashes) still produce a useful H1.
+#define H1_MIX(hash) ((VPS_TYPE_SIZE)((hash) * 0x9E3779B97F4A7C15ULL))
+#define H1_SAFE(hash) ((unsigned char)((H1_MIX(hash) >> (sizeof(VPS_TYPE_SIZE) * 8 - 7)) & 0x7F))
 
 static char VPS_SwissDictionary_Resize(struct VPS_SwissDictionary *item);
 
@@ -86,6 +88,14 @@ char VPS_SwissDictionary_Deconstruct
         }
     }
 
+    // Mark every slot empty so Deconstruct is idempotent (Release calls it again).
+    if (item->control_bytes)
+    {
+        memset(item->control_bytes, VPS_SWISS_CTRL_EMPTY, item->capacity);
+    }
+    item->count = 0;
+    item->tombstones = 0;
+
     return 1;
 }
 
@@ -144,6 +154,8 @@ static char VPS_SwissDictionary_Resize(struct VPS_SwissDictionary *item)
     item->control_bytes = new_control_bytes;
     item->entries = new_entries;
     item->capacity = new_capacity;
+    // Only live entries were re-inserted, so all tombstones are gone.
+    item->tombstones = 0;
 
     return 1;
 }
@@ -201,8 +213,9 @@ char VPS_SwissDictionary_Add
 {
     if (!item || !key) return 0;
 
-    // Check load factor and resize if needed
-    if ((item->count + 1) * 100 >= item->capacity * item->load_percent_threshold)
+    // Check load factor and resize if needed. Tombstones occupy probe slots
+    // just like live entries, so they count toward the load.
+    if ((item->count + item->tombstones + 1) * 100 >= item->capacity * item->load_percent_threshold)
     {
         if (!VPS_SwissDictionary_Resize(item)) return 0;
     }
@@ -250,6 +263,10 @@ char VPS_SwissDictionary_Add
 
     if (insert_index != (VPS_TYPE_SIZE)-1)
     {
+        if (item->control_bytes[insert_index] == VPS_SWISS_CTRL_DELETED)
+        {
+            item->tombstones--;
+        }
         item->control_bytes[insert_index] = h1;
         item->entries[insert_index].key = key;
         item->entries[insert_index].data = data;
@@ -301,6 +318,7 @@ char VPS_SwissDictionary_Remove
                     item->entries[index].data = 0;
                     item->entries[index].hash = 0;
                     item->count--;
+                    item->tombstones++;
                     return 1;
                 }
             }
