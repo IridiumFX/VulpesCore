@@ -52,6 +52,12 @@ char VPS_Compare_Utils_Data
 	len2 = data2->limit - data2->position;
 	min_len = (len1 < len2) ? len1 : len2;
 
+	// A non-empty readable window requires a backing buffer.
+	if ((len1 > 0 && !data1->bytes) || (len2 > 0 && !data2->bytes))
+	{
+		return 0;
+	}
+
 	if (min_len > 0)
 	{
 		cmp_result = memcmp

@@ -57,6 +57,12 @@ char VPS_Hash_Utils_Data
 	VPS_TYPE_SIZE hash = FNV_OFFSET_BASIS;
 	VPS_TYPE_SIZE i;
 
+	// A non-empty readable window requires a backing buffer.
+	if (!data->bytes && data->limit > data->position)
+	{
+		return 0;
+	}
+
 	// Hash the readable portion of the buffer, from position to limit.
 	for (i = data->position; i < data->limit; ++i)
 	{

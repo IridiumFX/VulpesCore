@@ -35,7 +35,8 @@ char VPS_Decoder_Construct
 	)
 )
 {
-	if (!item)
+	// The decode callback is invoked unguarded by the stream readers.
+	if (!item || !decode)
 	{
 		return 0;
 	}
