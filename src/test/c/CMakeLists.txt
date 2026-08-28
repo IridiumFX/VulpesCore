@@ -25,3 +25,5 @@ target_include_directories(CoreTests PRIVATE
 # Link the test executable against the VulpesCore library.
 # This ensures that the tests have access to the components they are testing.
 target_link_libraries(CoreTests PRIVATE VulpesCore)
+
+target_compile_options(CoreTests PRIVATE ${VULPESCORE_STRICT_FLAGS})

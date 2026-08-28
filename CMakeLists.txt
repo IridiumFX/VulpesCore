@@ -6,6 +6,19 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # Define the 'VulpesCore' library target.
 add_library(VulpesCore STATIC)
 
+# --- Return-code refactor guard ---
+# VulpesCore is migrating from the char/boolean return convention to
+# VPS_TYPE_RESULT, where 0 is success. A callback registered with the wrong
+# signature is the one mistake the tests cannot catch, because the polarity
+# only inverts at runtime. Promote it to a hard error.
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+	set(VULPESCORE_STRICT_FLAGS
+			-Werror=incompatible-pointer-types
+			-Werror=int-conversion
+	)
+endif()
+target_compile_options(VulpesCore PRIVATE ${VULPESCORE_STRICT_FLAGS})
+
 # Add the source files for this library.
 target_sources(VulpesCore PRIVATE
 		src/main/c/VPS_Data.c
