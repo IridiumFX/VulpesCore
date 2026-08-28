@@ -6,7 +6,7 @@
 #include <vulpes/VPS_Endian.h>
 #include <vulpes/VPS_DataWriter.h>
 
-static char VPS_DataWriter_PRIVATE_EnsureCapacity
+static VPS_TYPE_RESULT VPS_DataWriter_PRIVATE_EnsureCapacity
 (
 	struct VPS_DataWriter *writer
 	, VPS_TYPE_SIZE bytes_needed
@@ -15,31 +15,35 @@ static char VPS_DataWriter_PRIVATE_EnsureCapacity
 	// Subtraction form: limit <= size always holds, and limit + bytes_needed could wrap
 	if (bytes_needed > writer->target->size - writer->target->limit)
 	{
-		if (!VPS_Data_Expand(writer->target, bytes_needed))
+		if (VPS_Data_Expand(writer->target, bytes_needed))
 		{
-			return 0;
+			return VPS_FAIL;
 		}
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_DataWriter_Allocate
+VPS_TYPE_RESULT VPS_DataWriter_Allocate
 (
 	struct VPS_DataWriter **item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	*item = calloc(1, sizeof(struct VPS_DataWriter));
+	if (!*item)
+	{
+		return VPS_FAIL;
+	}
 
-	return (*item != 0);
+	return VPS_OK;
 }
 
-char VPS_DataWriter_Construct
+VPS_TYPE_RESULT VPS_DataWriter_Construct
 (
 	struct VPS_DataWriter *item
 	, struct VPS_Data *target
@@ -47,15 +51,15 @@ char VPS_DataWriter_Construct
 {
 	if (!item || !target)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	item->target = target;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_DataWriter_Deconstruct
+VPS_TYPE_RESULT VPS_DataWriter_Deconstruct
 (
 	struct VPS_DataWriter *item
 )
@@ -65,10 +69,10 @@ char VPS_DataWriter_Deconstruct
 		item->target = 0;
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_DataWriter_Release
+VPS_TYPE_RESULT VPS_DataWriter_Release
 (
 	struct VPS_DataWriter *item
 )
@@ -79,10 +83,10 @@ char VPS_DataWriter_Release
 		free(item);
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_DataWriter_Write8U
+VPS_TYPE_RESULT VPS_DataWriter_Write8U
 (
 	struct VPS_DataWriter *writer
 	, VPS_TYPE_8U value
@@ -90,21 +94,21 @@ char VPS_DataWriter_Write8U
 {
 	if (!writer || !writer->target)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	if (!VPS_DataWriter_PRIVATE_EnsureCapacity(writer, 1))
+	if (VPS_DataWriter_PRIVATE_EnsureCapacity(writer, 1))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	writer->target->bytes[writer->target->limit] = value;
 	writer->target->limit += 1;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_DataWriter_Write16UBE
+VPS_TYPE_RESULT VPS_DataWriter_Write16UBE
 (
 	struct VPS_DataWriter *writer
 	, VPS_TYPE_16U value
@@ -112,21 +116,21 @@ char VPS_DataWriter_Write16UBE
 {
 	if (!writer || !writer->target)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	if (!VPS_DataWriter_PRIVATE_EnsureCapacity(writer, 2))
+	if (VPS_DataWriter_PRIVATE_EnsureCapacity(writer, 2))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_Endian_Write16UBE(writer->target->bytes + writer->target->limit, value);
 	writer->target->limit += 2;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_DataWriter_Write16ULE
+VPS_TYPE_RESULT VPS_DataWriter_Write16ULE
 (
 	struct VPS_DataWriter *writer
 	, VPS_TYPE_16U value
@@ -134,21 +138,21 @@ char VPS_DataWriter_Write16ULE
 {
 	if (!writer || !writer->target)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	if (!VPS_DataWriter_PRIVATE_EnsureCapacity(writer, 2))
+	if (VPS_DataWriter_PRIVATE_EnsureCapacity(writer, 2))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_Endian_Write16ULE(writer->target->bytes + writer->target->limit, value);
 	writer->target->limit += 2;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_DataWriter_Write16SBE
+VPS_TYPE_RESULT VPS_DataWriter_Write16SBE
 (
 	struct VPS_DataWriter *writer
 	, VPS_TYPE_16S value
@@ -157,7 +161,7 @@ char VPS_DataWriter_Write16SBE
 	return VPS_DataWriter_Write16UBE(writer, (VPS_TYPE_16U)value);
 }
 
-char VPS_DataWriter_Write16SLE
+VPS_TYPE_RESULT VPS_DataWriter_Write16SLE
 (
 	struct VPS_DataWriter *writer
 	, VPS_TYPE_16S value
@@ -166,7 +170,7 @@ char VPS_DataWriter_Write16SLE
 	return VPS_DataWriter_Write16ULE(writer, (VPS_TYPE_16U)value);
 }
 
-char VPS_DataWriter_Write32UBE
+VPS_TYPE_RESULT VPS_DataWriter_Write32UBE
 (
 	struct VPS_DataWriter *writer
 	, VPS_TYPE_32U value
@@ -174,21 +178,21 @@ char VPS_DataWriter_Write32UBE
 {
 	if (!writer || !writer->target)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	if (!VPS_DataWriter_PRIVATE_EnsureCapacity(writer, 4))
+	if (VPS_DataWriter_PRIVATE_EnsureCapacity(writer, 4))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_Endian_Write32UBE(writer->target->bytes + writer->target->limit, value);
 	writer->target->limit += 4;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_DataWriter_Write32ULE
+VPS_TYPE_RESULT VPS_DataWriter_Write32ULE
 (
 	struct VPS_DataWriter *writer
 	, VPS_TYPE_32U value
@@ -196,21 +200,21 @@ char VPS_DataWriter_Write32ULE
 {
 	if (!writer || !writer->target)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	if (!VPS_DataWriter_PRIVATE_EnsureCapacity(writer, 4))
+	if (VPS_DataWriter_PRIVATE_EnsureCapacity(writer, 4))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_Endian_Write32ULE(writer->target->bytes + writer->target->limit, value);
 	writer->target->limit += 4;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_DataWriter_Write32SBE
+VPS_TYPE_RESULT VPS_DataWriter_Write32SBE
 (
 	struct VPS_DataWriter *writer
 	, VPS_TYPE_32S value
@@ -219,7 +223,7 @@ char VPS_DataWriter_Write32SBE
 	return VPS_DataWriter_Write32UBE(writer, (VPS_TYPE_32U)value);
 }
 
-char VPS_DataWriter_Write32SLE
+VPS_TYPE_RESULT VPS_DataWriter_Write32SLE
 (
 	struct VPS_DataWriter *writer
 	, VPS_TYPE_32S value
@@ -228,7 +232,7 @@ char VPS_DataWriter_Write32SLE
 	return VPS_DataWriter_Write32ULE(writer, (VPS_TYPE_32U)value);
 }
 
-char VPS_DataWriter_Write64UBE
+VPS_TYPE_RESULT VPS_DataWriter_Write64UBE
 (
 	struct VPS_DataWriter *writer
 	, VPS_TYPE_64U value
@@ -236,21 +240,21 @@ char VPS_DataWriter_Write64UBE
 {
 	if (!writer || !writer->target)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	if (!VPS_DataWriter_PRIVATE_EnsureCapacity(writer, 8))
+	if (VPS_DataWriter_PRIVATE_EnsureCapacity(writer, 8))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_Endian_Write64UBE(writer->target->bytes + writer->target->limit, value);
 	writer->target->limit += 8;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_DataWriter_Write64ULE
+VPS_TYPE_RESULT VPS_DataWriter_Write64ULE
 (
 	struct VPS_DataWriter *writer
 	, VPS_TYPE_64U value
@@ -258,21 +262,21 @@ char VPS_DataWriter_Write64ULE
 {
 	if (!writer || !writer->target)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	if (!VPS_DataWriter_PRIVATE_EnsureCapacity(writer, 8))
+	if (VPS_DataWriter_PRIVATE_EnsureCapacity(writer, 8))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_Endian_Write64ULE(writer->target->bytes + writer->target->limit, value);
 	writer->target->limit += 8;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_DataWriter_Write64SBE
+VPS_TYPE_RESULT VPS_DataWriter_Write64SBE
 (
 	struct VPS_DataWriter *writer
 	, VPS_TYPE_64S value
@@ -281,7 +285,7 @@ char VPS_DataWriter_Write64SBE
 	return VPS_DataWriter_Write64UBE(writer, (VPS_TYPE_64U)value);
 }
 
-char VPS_DataWriter_Write64SLE
+VPS_TYPE_RESULT VPS_DataWriter_Write64SLE
 (
 	struct VPS_DataWriter *writer
 	, VPS_TYPE_64S value
@@ -290,7 +294,7 @@ char VPS_DataWriter_Write64SLE
 	return VPS_DataWriter_Write64ULE(writer, (VPS_TYPE_64U)value);
 }
 
-char VPS_DataWriter_WriteBytes
+VPS_TYPE_RESULT VPS_DataWriter_WriteBytes
 (
 	struct VPS_DataWriter *writer
 	, const unsigned char *buffer
@@ -299,21 +303,21 @@ char VPS_DataWriter_WriteBytes
 {
 	if (!writer || !writer->target || (!buffer && size > 0))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	if (size == 0)
 	{
-		return 1;
+		return VPS_OK;
 	}
 
-	if (!VPS_DataWriter_PRIVATE_EnsureCapacity(writer, size))
+	if (VPS_DataWriter_PRIVATE_EnsureCapacity(writer, size))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	memcpy(writer->target->bytes + writer->target->limit, buffer, size);
 	writer->target->limit += size;
 
-	return 1;
+	return VPS_OK;
 }

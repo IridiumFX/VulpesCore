@@ -11,9 +11,9 @@
  * @brief A static helper function compatible with VPS_List's node_data_release.
  *        It knows how to properly release a VPS_Set_Entry and its contents.
  */
-static char _set_entry_releaser(void *entry_data)
+static VPS_TYPE_RESULT _set_entry_releaser(void *entry_data)
 {
-	if (!entry_data) return 1;
+	if (!entry_data) return VPS_OK;
 
 	struct VPS_Set_Entry *entry = entry_data;
 	// The set context is stored in the parent list's generic data pointer.
@@ -26,7 +26,7 @@ static char _set_entry_releaser(void *entry_data)
 
 	free(entry);
 
-	return 1;
+	return VPS_OK;
 }
 
 static char VPS_Set_PRIVATE_FindEntry
@@ -44,14 +44,14 @@ static char VPS_Set_PRIVATE_FindEntry
 	VPS_TYPE_SIZE hash;
 	VPS_TYPE_SIZE bucket_index;
 	VPS_TYPE_16S ordering;
-	char result;
+	VPS_TYPE_RESULT result;
 
 	// A NULL bucket output tells callers the hash itself failed,
 	// as opposed to a valid lookup that found no entry.
 	*bucket_output = 0;
 
 	result = item->hash(value, &hash);
-	if (!result)
+	if (result)
 	{
 		return 0;
 	}
@@ -72,7 +72,7 @@ static char VPS_Set_PRIVATE_FindEntry
 		if (bucket_entry->hash == hash)
 		{
 			result = item->item_compare(value, bucket_entry->item, &ordering);
-			if (result && ordering == 0)
+			if (!result && ordering == 0)
 			{
 				*entry = bucket_entry;
 
@@ -86,7 +86,7 @@ static char VPS_Set_PRIVATE_FindEntry
 	return 0;
 }
 
-static char VPS_Set_PRIVATE_Rehash
+static VPS_TYPE_RESULT VPS_Set_PRIVATE_Rehash
 (
 	struct VPS_Set *item
 )
@@ -107,13 +107,13 @@ static char VPS_Set_PRIVATE_Rehash
 	new_bucket_count = item->buckets * item->growth_multiplier;
 	if (new_bucket_count <= item->buckets)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	new_bucket_vector = calloc(new_bucket_count, sizeof(struct VPS_List *));
 	if (!new_bucket_vector)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	for (i = 0; i < new_bucket_count; ++i)
@@ -127,7 +127,7 @@ static char VPS_Set_PRIVATE_Rehash
 			}
 			free(new_bucket_vector);
 
-			return 0;
+			return VPS_FAIL;
 		}
 
 		VPS_List_Construct(new_bucket_vector[i], item, 0, _set_entry_releaser);
@@ -165,10 +165,10 @@ static char VPS_Set_PRIVATE_Rehash
 	}
 	free(old_bucket_vector);
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Set_Allocate
+VPS_TYPE_RESULT VPS_Set_Allocate
 (
 	struct VPS_Set **item,
 	VPS_TYPE_SIZE buckets
@@ -176,11 +176,11 @@ char VPS_Set_Allocate
 {
 	struct VPS_Set *subject;
 	VPS_TYPE_SIZE i;
-	char result;
+	VPS_TYPE_RESULT result;
 
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	if (!buckets)
@@ -191,21 +191,21 @@ char VPS_Set_Allocate
 	subject = calloc(1, sizeof(struct VPS_Set));
 	if (!subject)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	subject->bucket_vector = calloc(buckets, sizeof(struct VPS_List *));
 	if (!subject->bucket_vector)
 	{
 		free(subject);
-		return 0;
+		return VPS_FAIL;
 	}
 	subject->buckets = buckets;
 
 	for (i = 0; i < buckets; i++)
 	{
 		result = VPS_List_Allocate(&subject->bucket_vector[i]);
-		if (!result)
+		if (result)
 		{
 			goto cleanup;
 		}
@@ -214,22 +214,22 @@ char VPS_Set_Allocate
 
 	*item = subject;
 
-	return 1;
+	return VPS_OK;
 
 cleanup:
 
 	VPS_Set_Release(subject);
 	*item = 0;
 
-	return 0;
+	return VPS_FAIL;
 }
 
-char VPS_Set_Construct
+VPS_TYPE_RESULT VPS_Set_Construct
 (
 	struct VPS_Set *item,
-	char (*hash)(void *item, VPS_TYPE_SIZE *item_hash),
-	char (*item_compare)(void *item_1, void *item_2, VPS_TYPE_16S *ordering),
-	char (*item_release)(void *item),
+	VPS_TYPE_RESULT (*hash)(void *item, VPS_TYPE_SIZE *item_hash),
+	VPS_TYPE_RESULT (*item_compare)(void *item_1, void *item_2, VPS_TYPE_16S *ordering),
+	VPS_TYPE_RESULT (*item_release)(void *item),
 	VPS_TYPE_SIZE growth_multiplier,
 	VPS_TYPE_SIZE load_percent_threshold,
 	VPS_TYPE_SIZE single_bucket_threshold
@@ -237,7 +237,7 @@ char VPS_Set_Construct
 {
 	if (!item || !hash || !item_compare)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	item->growth_multiplier = growth_multiplier > 1 ? growth_multiplier : 2;
@@ -248,15 +248,15 @@ char VPS_Set_Construct
 	item->item_compare = item_compare;
 	item->item_release = item_release;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Set_Deconstruct
+VPS_TYPE_RESULT VPS_Set_Deconstruct
 (
 	struct VPS_Set *item
 )
 {
-	if (!item) return 0;
+	if (!item) return VPS_FAIL;
 
 	if (item->bucket_vector)
 	{
@@ -270,10 +270,10 @@ char VPS_Set_Deconstruct
 	}
 	item->total_entries = 0;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Set_Release
+VPS_TYPE_RESULT VPS_Set_Release
 (
 	struct VPS_Set *item
 )
@@ -295,7 +295,7 @@ char VPS_Set_Release
 		free(item);
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
 char VPS_Set_Contains
@@ -316,7 +316,7 @@ char VPS_Set_Contains
 	return VPS_Set_PRIVATE_FindEntry(item, value, &entry, &item_hash, &bucket);
 }
 
-char VPS_Set_Add
+VPS_TYPE_RESULT VPS_Set_Add
 (
 	struct VPS_Set *item,
 	void *value
@@ -329,7 +329,7 @@ char VPS_Set_Add
 
 	if (!item || !value)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	found = VPS_Set_PRIVATE_FindEntry(item, value, &entry, &item_hash, &bucket);
@@ -337,12 +337,12 @@ char VPS_Set_Add
 	if (found)
 	{
 		// Item already exists, do nothing.
-		return 1;
+		return VPS_OK;
 	}
 	else if (!bucket)
 	{
 		// The hash callback itself failed; nothing was looked up.
-		return 0;
+		return VPS_FAIL;
 	}
 	else
 	{
@@ -350,25 +350,25 @@ char VPS_Set_Add
 		struct VPS_List_Node *owner_node;
 
 		entry = calloc(1, sizeof(struct VPS_Set_Entry));
-		if (!entry) return 0;
+		if (!entry) return VPS_FAIL;
 
 		entry->item = value;
 		entry->hash = item_hash;
 
-		if (!VPS_List_Node_Allocate(&owner_node))
+		if (VPS_List_Node_Allocate(&owner_node))
 		{
 			free(entry);
-			return 0;
+			return VPS_FAIL;
 		}
 		if
 		(
-			!VPS_List_Node_Construct(owner_node, entry)
-			|| !VPS_List_AddTail(bucket, owner_node)
+			VPS_List_Node_Construct(owner_node, entry)
+			|| VPS_List_AddTail(bucket, owner_node)
 		)
 		{
 			VPS_List_Node_Release(owner_node);
 			free(entry);
-			return 0;
+			return VPS_FAIL;
 		}
 
 		entry->owner_node = owner_node;
@@ -382,10 +382,10 @@ char VPS_Set_Add
 		VPS_Set_PRIVATE_Rehash(item);
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Set_Remove
+VPS_TYPE_RESULT VPS_Set_Remove
 (
 	struct VPS_Set *item,
 	void *value
@@ -397,7 +397,7 @@ char VPS_Set_Remove
 
 	if (!item || !value)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// Find the entry. If it doesn't exist, the operation is idempotent;
@@ -414,7 +414,7 @@ char VPS_Set_Remove
 		)
 	)
 	{
-		return bucket ? 1 : 0;
+		return bucket ? VPS_OK : VPS_FAIL;
 	}
 
 	// Save the node pointer before we release the entry it contains.
@@ -437,5 +437,5 @@ char VPS_Set_Remove
 
 	item->total_entries--;
 
-	return 1;
+	return VPS_OK;
 }

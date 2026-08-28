@@ -8,7 +8,7 @@
 
 static const VPS_TYPE_SIZE PRIVATE_VPS_STREAMWRITER_BUFFER_SIZE = 8192;
 
-char VPS_StreamWriter_Allocate
+VPS_TYPE_RESULT VPS_StreamWriter_Allocate
 (
 	struct VPS_StreamWriter **item
 )
@@ -17,19 +17,18 @@ char VPS_StreamWriter_Allocate
 
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	writer = calloc(1, sizeof(struct VPS_StreamWriter));
 	if (!writer)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	if
 	(
-		!VPS_Data_Allocate
-		(
+		VPS_Data_Allocate(
 			&writer->write_buffer
 			, PRIVATE_VPS_STREAMWRITER_BUFFER_SIZE
 			, 0
@@ -37,16 +36,16 @@ char VPS_StreamWriter_Allocate
 	)
 	{
 		free(writer);
-		return 0;
+		return VPS_FAIL;
 	}
 
 	writer->file_handle = -1;
 	*item = writer;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_StreamWriter_Construct
+VPS_TYPE_RESULT VPS_StreamWriter_Construct
 (
 	struct VPS_StreamWriter *item
 	, int file_handle
@@ -54,20 +53,20 @@ char VPS_StreamWriter_Construct
 {
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	if (!VPS_Data_Construct(item->write_buffer))
+	if (VPS_Data_Construct(item->write_buffer))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	item->file_handle = file_handle;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_StreamWriter_Deconstruct
+VPS_TYPE_RESULT VPS_StreamWriter_Deconstruct
 (
 	struct VPS_StreamWriter *item
 )
@@ -76,20 +75,20 @@ char VPS_StreamWriter_Deconstruct
 
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// Report a failed flush so the caller can detect lost buffered data,
 	// but complete the teardown either way. An already-empty buffer is fine.
 	flushed = (item->write_buffer && item->write_buffer->limit == 0)
-		|| VPS_StreamWriter_Flush(item);
+		|| VPS_StreamWriter_Flush(item) == VPS_OK;
 	VPS_Data_Deconstruct(item->write_buffer);
 	item->file_handle = -1;
 
-	return flushed;
+	return flushed ? VPS_OK : VPS_FAIL;
 }
 
-char VPS_StreamWriter_Release
+VPS_TYPE_RESULT VPS_StreamWriter_Release
 (
 	struct VPS_StreamWriter *item
 )
@@ -101,10 +100,10 @@ char VPS_StreamWriter_Release
 		free(item);
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_StreamWriter_Flush
+VPS_TYPE_RESULT VPS_StreamWriter_Flush
 (
 	struct VPS_StreamWriter *item
 )
@@ -113,7 +112,7 @@ char VPS_StreamWriter_Flush
 
 	if (!item || item->file_handle < 0 || !item->write_buffer)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	while (total_written < item->write_buffer->limit)
@@ -127,7 +126,7 @@ char VPS_StreamWriter_Flush
 
 		if (result < 0)
 		{
-			return 0;
+			return VPS_FAIL;
 		}
 
 		total_written += (VPS_TYPE_SIZE)result;
@@ -135,10 +134,10 @@ char VPS_StreamWriter_Flush
 
 	item->write_buffer->limit = 0;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_StreamWriter_Write
+VPS_TYPE_RESULT VPS_StreamWriter_Write
 (
 	struct VPS_StreamWriter *item
 	, const unsigned char *data
@@ -149,7 +148,7 @@ char VPS_StreamWriter_Write
 
 	if (!item || (!data && size > 0) || item->file_handle < 0)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	while (offset < size)
@@ -176,12 +175,12 @@ char VPS_StreamWriter_Write
 
 		if (item->write_buffer->limit >= item->write_buffer->size)
 		{
-			if (!VPS_StreamWriter_Flush(item))
+			if (VPS_StreamWriter_Flush(item))
 			{
-				return 0;
+				return VPS_FAIL;
 			}
 		}
 	}
 
-	return 1;
+	return VPS_OK;
 }

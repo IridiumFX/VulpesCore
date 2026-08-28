@@ -19,14 +19,14 @@ static const VPS_TYPE_SIZE PRIVATE_VPS_STREAMREADER_BUFFER_SIZE = 4096;
 // Largest single read() request; the count parameter is 32-bit on some platforms.
 static const VPS_TYPE_SIZE PRIVATE_VPS_STREAMREADER_MAX_READ = 1u << 30;
 
-char VPS_StreamReader_Allocate
+VPS_TYPE_RESULT VPS_StreamReader_Allocate
 (
 	struct VPS_StreamReader **item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	*item = calloc
@@ -36,13 +36,13 @@ char VPS_StreamReader_Allocate
 	);
 	if (!*item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_StreamReader_Construct
+VPS_TYPE_RESULT VPS_StreamReader_Construct
 (
 	struct VPS_StreamReader *item
 	, struct VPS_Data *destination_buffer
@@ -53,7 +53,7 @@ char VPS_StreamReader_Construct
 {
 	if (!item || !destination_buffer)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	if (raw_buffer)
@@ -67,21 +67,19 @@ char VPS_StreamReader_Construct
 		// No buffer provided, so allocate and construct our own internal one.
 		if
 		(
-			!VPS_Data_Allocate
-			(
+			VPS_Data_Allocate(
 				&item->raw_buffer
 				, PRIVATE_VPS_STREAMREADER_BUFFER_SIZE
 				, 0
 			)
 		)
 		{
-			return 0;
+			return VPS_FAIL;
 		}
 
 		if
 		(
-			!VPS_Data_Construct
-			(
+			VPS_Data_Construct(
 				item->raw_buffer
 			)
 		)
@@ -92,7 +90,7 @@ char VPS_StreamReader_Construct
 			);
 			item->raw_buffer = 0;
 
-			return 0;
+			return VPS_FAIL;
 		}
 		item->own_raw_buffer = 1;
 	}
@@ -100,17 +98,17 @@ char VPS_StreamReader_Construct
 	item->decoded_buffer = destination_buffer;
 	item->file_handle = file_handle;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_StreamReader_Deconstruct
+VPS_TYPE_RESULT VPS_StreamReader_Deconstruct
 (
 	struct VPS_StreamReader *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	if (item->own_raw_buffer)
@@ -125,10 +123,10 @@ char VPS_StreamReader_Deconstruct
 	item->raw_buffer = 0;
 	item->file_handle = -1;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_StreamReader_Release
+VPS_TYPE_RESULT VPS_StreamReader_Release
 (
 	struct VPS_StreamReader *item
 )
@@ -157,10 +155,10 @@ char VPS_StreamReader_Release
 		);
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_StreamReader_Read
+VPS_TYPE_RESULT VPS_StreamReader_Read
 (
 	struct VPS_StreamReader *item
 	, VPS_TYPE_SIZE new_bytes_to_read
@@ -177,20 +175,19 @@ char VPS_StreamReader_Read
 
 	if (!item || !item->decoded_buffer || !item->raw_buffer || item->file_handle < 0 || !decoder || !decoder->decode)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// 1. Compact the internal buffer. This moves any unprocessed data from the
 	// previous read to the beginning of the buffer, making room for new data.
 	if
 	(
-		!VPS_Data_Compact
-		(
+		VPS_Data_Compact(
 			item->raw_buffer
 		)
 	)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// 2. Determine how many bytes we *still* need to read from the OS to
@@ -205,10 +202,10 @@ char VPS_StreamReader_Read
 	VPS_TYPE_SIZE required_raw_size = item->raw_buffer->limit + bytes_still_needed;
 	if (item->raw_buffer->size < required_raw_size)
 	{
-		if (!VPS_Data_Resize(item->raw_buffer, required_raw_size))
+		if (VPS_Data_Resize(item->raw_buffer, required_raw_size))
 		{
 			// Resize failed
-			return 0;
+			return VPS_FAIL;
 		}
 	}
 
@@ -235,7 +232,7 @@ char VPS_StreamReader_Read
 	if (read_result < 0)
 	{
 		// Read error
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// 5. Update the raw buffer's limit to include the newly read data.
@@ -253,7 +250,7 @@ char VPS_StreamReader_Read
 
 	if
 	(
-		!decoder->decode
+		decoder->decode
 		(
 			item->raw_buffer
 			, item->decoded_buffer
@@ -262,7 +259,7 @@ char VPS_StreamReader_Read
 		)
 	)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// 7. Advance the raw buffer's position by the amount the decoder consumed.
@@ -270,7 +267,7 @@ char VPS_StreamReader_Read
 	// a "sliding window" effect. Never trust the decoder beyond the buffered window.
 	if (bytes_consumed > item->raw_buffer->limit)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 	item->raw_buffer->position = bytes_consumed;
 
@@ -291,10 +288,10 @@ char VPS_StreamReader_Read
 		*bytes_available_to_use = item->decoded_buffer->limit - item->decoded_buffer->position;
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_StreamReader_Seek
+VPS_TYPE_RESULT VPS_StreamReader_Seek
 (
 	struct VPS_StreamReader *item
 	, VPS_TYPE_64S offset
@@ -303,7 +300,7 @@ char VPS_StreamReader_Seek
 {
 	if (!item || item->file_handle < 0)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// A forward skip that fits inside the buffered window needs no syscall.
@@ -313,7 +310,7 @@ char VPS_StreamReader_Seek
 		if ((VPS_TYPE_64U)offset <= buffered)
 		{
 			item->raw_buffer->position += (VPS_TYPE_SIZE)offset;
-			return 1;
+			return VPS_OK;
 		}
 	}
 
@@ -333,7 +330,7 @@ char VPS_StreamReader_Seek
 	// Attempt a true seek first. This will succeed for files.
 	if (PRIVATE_VPS_LSEEK(item->file_handle, offset, whence) != -1)
 	{
-		return 1;
+		return VPS_OK;
 	}
 
 	// If lseek fails (e.g., on a pipe or socket) and it's a forward skip,
@@ -350,13 +347,13 @@ char VPS_StreamReader_Seek
 			if (bytes_read <= 0)
 			{
 				// Error or EOF before we finished skipping.
-				return 0;
+				return VPS_FAIL;
 			}
 			remaining_to_skip -= bytes_read;
 		}
-		return 1;
+		return VPS_OK;
 	}
 
 	// Seek failed for a reason we don't support (e.g., seeking backwards on a stream).
-	return 0;
+	return VPS_FAIL;
 }

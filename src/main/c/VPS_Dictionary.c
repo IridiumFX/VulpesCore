@@ -11,9 +11,9 @@
  * @brief A static helper function compatible with VPS_List's node_data_release.
  *        It knows how to properly release a VPS_Dictionary_Entry and its contents.
  */
-static char _dictionary_entry_releaser(void *entry_data)
+static VPS_TYPE_RESULT _dictionary_entry_releaser(void *entry_data)
 {
-	if (!entry_data) return 1;
+	if (!entry_data) return VPS_OK;
 
 	struct VPS_Dictionary_Entry *entry = entry_data;
 	// The dictionary context is stored in the parent list's generic data pointer.
@@ -27,7 +27,7 @@ static char _dictionary_entry_releaser(void *entry_data)
 
 	free(entry);
 
-	return 1;
+	return VPS_OK;
 }
 
 static char VPS_Dictionary_PRIVATE_FindEntry
@@ -45,14 +45,14 @@ static char VPS_Dictionary_PRIVATE_FindEntry
 	VPS_TYPE_SIZE hash;
 	VPS_TYPE_SIZE bucket_index;
 	VPS_TYPE_16S ordering;
-	char result;
+	VPS_TYPE_RESULT result;
 
 	// A NULL bucket output tells callers the hash itself failed,
 	// as opposed to a valid lookup that found no entry.
 	*bucket_output = 0;
 
 	result = item->hash(key, &hash);
-	if (!result)
+	if (result)
 	{
 		return 0;
 	}
@@ -73,7 +73,7 @@ static char VPS_Dictionary_PRIVATE_FindEntry
 		if (bucket_entry->hash == hash)
 		{
 			result = item->key_compare(key, bucket_entry->key, &ordering);
-			if (result && ordering == 0)
+			if (!result && ordering == 0)
 			{
 				*entry = bucket_entry;
 
@@ -87,7 +87,7 @@ static char VPS_Dictionary_PRIVATE_FindEntry
 	return 0;
 }
 
-static char VPS_Dictionary_PRIVATE_Rehash
+static VPS_TYPE_RESULT VPS_Dictionary_PRIVATE_Rehash
 (
 	struct VPS_Dictionary *item
 )
@@ -108,13 +108,13 @@ static char VPS_Dictionary_PRIVATE_Rehash
 	new_bucket_count = item->buckets * item->growth_multiplier;
 	if (new_bucket_count <= item->buckets)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	new_bucket_vector = calloc(new_bucket_count, sizeof(struct VPS_List *));
 	if (!new_bucket_vector)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	for (i = 0; i < new_bucket_count; ++i)
@@ -128,7 +128,7 @@ static char VPS_Dictionary_PRIVATE_Rehash
 			}
 			free(new_bucket_vector);
 
-			return 0;
+			return VPS_FAIL;
 		}
 
 		VPS_List_Construct(new_bucket_vector[i], item, 0, _dictionary_entry_releaser);
@@ -166,10 +166,10 @@ static char VPS_Dictionary_PRIVATE_Rehash
 	}
 	free(old_bucket_vector);
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Dictionary_Allocate
+VPS_TYPE_RESULT VPS_Dictionary_Allocate
 (
 	struct VPS_Dictionary **item,
 	VPS_TYPE_SIZE buckets
@@ -177,11 +177,11 @@ char VPS_Dictionary_Allocate
 {
 	struct VPS_Dictionary *subject;
 	VPS_TYPE_SIZE i;
-	char result;
+	VPS_TYPE_RESULT result;
 
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	if (!buckets)
@@ -192,21 +192,21 @@ char VPS_Dictionary_Allocate
 	subject = calloc(1, sizeof(struct VPS_Dictionary));
 	if (!subject)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	subject->bucket_vector = calloc(buckets, sizeof(struct VPS_List *));
 	if (!subject->bucket_vector)
 	{
 		free(subject);
-		return 0;
+		return VPS_FAIL;
 	}
 	subject->buckets = buckets;
 
 	for (i = 0; i < buckets; i++)
 	{
 		result = VPS_List_Allocate(&subject->bucket_vector[i]);
-		if (!result)
+		if (result)
 		{
 			goto cleanup;
 		}
@@ -215,23 +215,23 @@ char VPS_Dictionary_Allocate
 
 	*item = subject;
 
-	return 1;
+	return VPS_OK;
 
 cleanup:
 
 	VPS_Dictionary_Release(subject);
 	*item = 0;
 
-	return 0;
+	return VPS_FAIL;
 }
 
-char VPS_Dictionary_Construct
+VPS_TYPE_RESULT VPS_Dictionary_Construct
 (
 	struct VPS_Dictionary *item,
-	char (*hash)(void *key, VPS_TYPE_SIZE *key_hash),
-	char (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering),
-	char (*key_release)(void *key),
-	char (*data_release)(void *data),
+	VPS_TYPE_RESULT (*hash)(void *key, VPS_TYPE_SIZE *key_hash),
+	VPS_TYPE_RESULT (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering),
+	VPS_TYPE_RESULT (*key_release)(void *key),
+	VPS_TYPE_RESULT (*data_release)(void *data),
 	VPS_TYPE_SIZE growth_multiplier,
 	VPS_TYPE_SIZE load_percent_threshold,
 	VPS_TYPE_SIZE single_bucket_threshold
@@ -239,7 +239,7 @@ char VPS_Dictionary_Construct
 {
 	if (!item || !hash || !key_compare)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	item->growth_multiplier = growth_multiplier > 1 ? growth_multiplier : 2;
@@ -251,15 +251,15 @@ char VPS_Dictionary_Construct
 	item->key_release = key_release;
 	item->data_release = data_release;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Dictionary_Deconstruct
+VPS_TYPE_RESULT VPS_Dictionary_Deconstruct
 (
 	struct VPS_Dictionary *item
 )
 {
-	if (!item) return 0;
+	if (!item) return VPS_FAIL;
 
 	if (item->bucket_vector)
 	{
@@ -273,10 +273,10 @@ char VPS_Dictionary_Deconstruct
 	}
 	item->total_entries = 0;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Dictionary_Release
+VPS_TYPE_RESULT VPS_Dictionary_Release
 (
 	struct VPS_Dictionary *item
 )
@@ -298,7 +298,7 @@ char VPS_Dictionary_Release
 		free(item);
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
 char VPS_Dictionary_Find
@@ -332,7 +332,7 @@ char VPS_Dictionary_Find
 	return 1;
 }
 
-char VPS_Dictionary_Add
+VPS_TYPE_RESULT VPS_Dictionary_Add
 (
 	struct VPS_Dictionary *item,
 	void *key,
@@ -346,7 +346,7 @@ char VPS_Dictionary_Add
 
 	if (!item || !key)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	found = VPS_Dictionary_PRIVATE_FindEntry(item, key, &entry, &key_hash, &bucket);
@@ -354,7 +354,7 @@ char VPS_Dictionary_Add
 	if (!found && !bucket)
 	{
 		// The hash callback itself failed; nothing was looked up.
-		return 0;
+		return VPS_FAIL;
 	}
 
 	if (found)
@@ -374,26 +374,26 @@ char VPS_Dictionary_Add
 		struct VPS_List_Node *owner_node;
 
 		entry = calloc(1, sizeof(struct VPS_Dictionary_Entry));
-		if (!entry) return 0;
+		if (!entry) return VPS_FAIL;
 
 		entry->key = key;
 		entry->data = data;
 		entry->hash = key_hash;
 
-		if (!VPS_List_Node_Allocate(&owner_node))
+		if (VPS_List_Node_Allocate(&owner_node))
 		{
 			free(entry);
-			return 0;
+			return VPS_FAIL;
 		}
 		if
 		(
-			!VPS_List_Node_Construct(owner_node, entry)
-			|| !VPS_List_AddTail(bucket, owner_node)
+			VPS_List_Node_Construct(owner_node, entry)
+			|| VPS_List_AddTail(bucket, owner_node)
 		)
 		{
 			VPS_List_Node_Release(owner_node);
 			free(entry);
-			return 0;
+			return VPS_FAIL;
 		}
 
 		entry->owner_node = owner_node;
@@ -407,10 +407,10 @@ char VPS_Dictionary_Add
 		VPS_Dictionary_PRIVATE_Rehash(item);
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Dictionary_Remove
+VPS_TYPE_RESULT VPS_Dictionary_Remove
 (
 	struct VPS_Dictionary *item,
 	void *key
@@ -422,7 +422,7 @@ char VPS_Dictionary_Remove
 
 	if (!item || !key)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// Find the entry. If it doesn't exist, the operation is idempotent;
@@ -439,7 +439,7 @@ char VPS_Dictionary_Remove
 		)
 	)
 	{
-		return bucket ? 1 : 0;
+		return bucket ? VPS_OK : VPS_FAIL;
 	}
 
 	// Save the node pointer before we release the entry it contains.
@@ -462,5 +462,5 @@ char VPS_Dictionary_Remove
 
 	item->total_entries--;
 
-	return 1;
+	return VPS_OK;
 }

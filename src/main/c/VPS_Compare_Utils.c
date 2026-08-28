@@ -4,7 +4,7 @@
 #include <vulpes/VPS_Compare_Utils.h>
 #include <vulpes/VPS_Data.h>
 
-char VPS_Compare_Utils_String
+VPS_TYPE_RESULT VPS_Compare_Utils_String
 (
 	void *key_1
 	, void *key_2
@@ -13,7 +13,7 @@ char VPS_Compare_Utils_String
 {
 	if (!key_1 || !key_2 || !ordering)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	int cmp = strcmp
@@ -23,10 +23,10 @@ char VPS_Compare_Utils_String
 	);
 	*ordering = (cmp < 0) ? -1 : (cmp > 0) ? 1 : 0;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Compare_Utils_Data
+VPS_TYPE_RESULT VPS_Compare_Utils_Data
 (
 	void *key_1
 	, void *key_2
@@ -42,7 +42,7 @@ char VPS_Compare_Utils_Data
 
 	if (!key_1 || !key_2 || !ordering)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	data1 = (struct VPS_Data *)key_1;
@@ -55,7 +55,7 @@ char VPS_Compare_Utils_Data
 	// A non-empty readable window requires a backing buffer.
 	if ((len1 > 0 && !data1->bytes) || (len2 > 0 && !data2->bytes))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	if (min_len > 0)
@@ -70,16 +70,16 @@ char VPS_Compare_Utils_Data
 		{
 			*ordering = (cmp_result < 0) ? -1 : 1;
 
-			return 1;
+			return VPS_OK;
 		}
 	}
 
 	*ordering = (len1 < len2) ? -1 : (len1 > len2) ? 1 : 0;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Compare_Utils_8U
+VPS_TYPE_RESULT VPS_Compare_Utils_8U
 (
 	void *key_1
 	, void *key_2
@@ -88,7 +88,7 @@ char VPS_Compare_Utils_8U
 {
 	if (!key_1 || !key_2 || !ordering)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_TYPE_8U val1 = *(VPS_TYPE_8U *) key_1;
@@ -106,10 +106,10 @@ char VPS_Compare_Utils_8U
 		*ordering = 0;
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Compare_Utils_16U
+VPS_TYPE_RESULT VPS_Compare_Utils_16U
 (
 	void *key_1
 	, void *key_2
@@ -118,7 +118,7 @@ char VPS_Compare_Utils_16U
 {
 	if (!key_1 || !key_2 || !ordering)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_TYPE_16U val1 = *(VPS_TYPE_16U *) key_1;
@@ -136,10 +136,10 @@ char VPS_Compare_Utils_16U
 		*ordering = 0;
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Compare_Utils_32U
+VPS_TYPE_RESULT VPS_Compare_Utils_32U
 (
 	void *key_1
 	, void *key_2
@@ -148,7 +148,7 @@ char VPS_Compare_Utils_32U
 {
 	if (!key_1 || !key_2 || !ordering)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_TYPE_32U val1 = *(VPS_TYPE_32U *) key_1;
@@ -166,10 +166,10 @@ char VPS_Compare_Utils_32U
 		*ordering = 0;
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Compare_Utils_64U
+VPS_TYPE_RESULT VPS_Compare_Utils_64U
 (
 	void *key_1
 	, void *key_2
@@ -178,7 +178,7 @@ char VPS_Compare_Utils_64U
 {
 	if (!key_1 || !key_2 || !ordering)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_TYPE_64U val1 = *(VPS_TYPE_64U *) key_1;
@@ -196,5 +196,5 @@ char VPS_Compare_Utils_64U
 		*ordering = 0;
 	}
 
-	return 1;
+	return VPS_OK;
 }

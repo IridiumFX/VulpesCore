@@ -8,9 +8,9 @@
 #define H1_MIX(hash) ((VPS_TYPE_SIZE)((hash) * 0x9E3779B97F4A7C15ULL))
 #define H1_SAFE(hash) ((unsigned char)((H1_MIX(hash) >> (sizeof(VPS_TYPE_SIZE) * 8 - 7)) & 0x7F))
 
-static char VPS_SwissDictionary_Resize(struct VPS_SwissDictionary *item);
+static VPS_TYPE_RESULT VPS_SwissDictionary_Resize(struct VPS_SwissDictionary *item);
 
-char VPS_SwissDictionary_Allocate
+VPS_TYPE_RESULT VPS_SwissDictionary_Allocate
 (
     struct VPS_SwissDictionary **item,
     VPS_TYPE_SIZE initial_capacity
@@ -18,18 +18,18 @@ char VPS_SwissDictionary_Allocate
 {
     struct VPS_SwissDictionary *subject;
 
-    if (!item) return 0;
+    if (!item) return VPS_FAIL;
 
     if (initial_capacity == 0) initial_capacity = DEFAULT_CAPACITY;
 
     subject = calloc(1, sizeof(struct VPS_SwissDictionary));
-    if (!subject) return 0;
+    if (!subject) return VPS_FAIL;
 
     subject->control_bytes = malloc(initial_capacity * sizeof(unsigned char));
     if (!subject->control_bytes)
     {
         free(subject);
-        return 0;
+        return VPS_FAIL;
     }
     // Initialize control bytes to EMPTY
     memset(subject->control_bytes, VPS_SWISS_CTRL_EMPTY, initial_capacity);
@@ -39,28 +39,28 @@ char VPS_SwissDictionary_Allocate
     {
         free(subject->control_bytes);
         free(subject);
-        return 0;
+        return VPS_FAIL;
     }
 
     subject->capacity = initial_capacity;
     subject->count = 0;
 
     *item = subject;
-    return 1;
+    return VPS_OK;
 }
 
-char VPS_SwissDictionary_Construct
+VPS_TYPE_RESULT VPS_SwissDictionary_Construct
 (
     struct VPS_SwissDictionary *item,
-    char (*hash)(void *key, VPS_TYPE_SIZE *key_hash),
-    char (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering),
-    char (*key_release)(void *key),
-    char (*data_release)(void *data),
+    VPS_TYPE_RESULT (*hash)(void *key, VPS_TYPE_SIZE *key_hash),
+    VPS_TYPE_RESULT (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering),
+    VPS_TYPE_RESULT (*key_release)(void *key),
+    VPS_TYPE_RESULT (*data_release)(void *data),
     VPS_TYPE_SIZE growth_factor,
     VPS_TYPE_SIZE load_percent_threshold
 )
 {
-    if (!item || !hash || !key_compare) return 0;
+    if (!item || !hash || !key_compare) return VPS_FAIL;
 
     item->hash = hash;
     item->key_compare = key_compare;
@@ -69,15 +69,15 @@ char VPS_SwissDictionary_Construct
     item->growth_factor = growth_factor > 1 ? growth_factor : 2;
     item->load_percent_threshold = load_percent_threshold > 0 ? load_percent_threshold : 75;
 
-    return 1;
+    return VPS_OK;
 }
 
-char VPS_SwissDictionary_Deconstruct
+VPS_TYPE_RESULT VPS_SwissDictionary_Deconstruct
 (
     struct VPS_SwissDictionary *item
 )
 {
-    if (!item) return 0;
+    if (!item) return VPS_FAIL;
 
     for (VPS_TYPE_SIZE i = 0; i < item->capacity; ++i)
     {
@@ -96,10 +96,10 @@ char VPS_SwissDictionary_Deconstruct
     item->count = 0;
     item->tombstones = 0;
 
-    return 1;
+    return VPS_OK;
 }
 
-char VPS_SwissDictionary_Release
+VPS_TYPE_RESULT VPS_SwissDictionary_Release
 (
     struct VPS_SwissDictionary *item
 )
@@ -111,10 +111,10 @@ char VPS_SwissDictionary_Release
         free(item->entries);
         free(item);
     }
-    return 1;
+    return VPS_OK;
 }
 
-static char VPS_SwissDictionary_Resize(struct VPS_SwissDictionary *item)
+static VPS_TYPE_RESULT VPS_SwissDictionary_Resize(struct VPS_SwissDictionary *item)
 {
     VPS_TYPE_SIZE new_capacity = item->capacity * item->growth_factor;
     unsigned char *new_control_bytes = malloc(new_capacity * sizeof(unsigned char));
@@ -124,7 +124,7 @@ static char VPS_SwissDictionary_Resize(struct VPS_SwissDictionary *item)
     {
         free(new_control_bytes);
         free(new_entries);
-        return 0;
+        return VPS_FAIL;
     }
 
     memset(new_control_bytes, VPS_SWISS_CTRL_EMPTY, new_capacity);
@@ -157,7 +157,7 @@ static char VPS_SwissDictionary_Resize(struct VPS_SwissDictionary *item)
     // Only live entries were re-inserted, so all tombstones are gone.
     item->tombstones = 0;
 
-    return 1;
+    return VPS_OK;
 }
 
 char VPS_SwissDictionary_Find
@@ -170,7 +170,7 @@ char VPS_SwissDictionary_Find
     if (!item || !key) return 0;
 
     VPS_TYPE_SIZE hash;
-    if (!item->hash(key, &hash)) return 0;
+    if (item->hash(key, &hash)) return 0;
 
     unsigned char h1 = H1_SAFE(hash);
     VPS_TYPE_SIZE index = hash % item->capacity;
@@ -189,7 +189,7 @@ char VPS_SwissDictionary_Find
             if (item->entries[index].hash == hash)
             {
                 VPS_TYPE_16S ordering;
-                if (item->key_compare(key, item->entries[index].key, &ordering) && ordering == 0)
+                if (item->key_compare(key, item->entries[index].key, &ordering) == VPS_OK && ordering == 0)
                 {
                     if (data) *data = item->entries[index].data;
                     return 1;
@@ -204,24 +204,24 @@ char VPS_SwissDictionary_Find
     return 0;
 }
 
-char VPS_SwissDictionary_Add
+VPS_TYPE_RESULT VPS_SwissDictionary_Add
 (
     struct VPS_SwissDictionary *item,
     void *key,
     void *data
 )
 {
-    if (!item || !key) return 0;
+    if (!item || !key) return VPS_FAIL;
 
     // Check load factor and resize if needed. Tombstones occupy probe slots
     // just like live entries, so they count toward the load.
     if ((item->count + item->tombstones + 1) * 100 >= item->capacity * item->load_percent_threshold)
     {
-        if (!VPS_SwissDictionary_Resize(item)) return 0;
+        if (VPS_SwissDictionary_Resize(item)) return VPS_FAIL;
     }
 
     VPS_TYPE_SIZE hash;
-    if (!item->hash(key, &hash)) return 0;
+    if (item->hash(key, &hash)) return VPS_FAIL;
 
     unsigned char h1 = H1_SAFE(hash);
     VPS_TYPE_SIZE index = hash % item->capacity;
@@ -247,12 +247,12 @@ char VPS_SwissDictionary_Add
             if (item->entries[index].hash == hash)
             {
                 VPS_TYPE_16S ordering;
-                if (item->key_compare(key, item->entries[index].key, &ordering) && ordering == 0)
+                if (item->key_compare(key, item->entries[index].key, &ordering) == VPS_OK && ordering == 0)
                 {
                     // Update existing
                     if (item->data_release) item->data_release(item->entries[index].data);
                     item->entries[index].data = data;
-                    return 1;
+                    return VPS_OK;
                 }
             }
         }
@@ -272,23 +272,23 @@ char VPS_SwissDictionary_Add
         item->entries[insert_index].data = data;
         item->entries[insert_index].hash = hash;
         item->count++;
-        return 1;
+        return VPS_OK;
     }
 
     // Should not happen if resize logic is correct
-    return 0;
+    return VPS_FAIL;
 }
 
-char VPS_SwissDictionary_Remove
+VPS_TYPE_RESULT VPS_SwissDictionary_Remove
 (
     struct VPS_SwissDictionary *item,
     void *key
 )
 {
-    if (!item || !key) return 0;
+    if (!item || !key) return VPS_FAIL;
 
     VPS_TYPE_SIZE hash;
-    if (!item->hash(key, &hash)) return 0;
+    if (item->hash(key, &hash)) return VPS_FAIL;
 
     unsigned char h1 = H1_SAFE(hash);
     VPS_TYPE_SIZE index = hash % item->capacity;
@@ -300,14 +300,14 @@ char VPS_SwissDictionary_Remove
 
         if (ctrl == VPS_SWISS_CTRL_EMPTY)
         {
-            return 0; // Not found
+            return VPS_FAIL; // Not found
         }
         else if (ctrl == h1)
         {
             if (item->entries[index].hash == hash)
             {
                 VPS_TYPE_16S ordering;
-                if (item->key_compare(key, item->entries[index].key, &ordering) && ordering == 0)
+                if (item->key_compare(key, item->entries[index].key, &ordering) == VPS_OK && ordering == 0)
                 {
                     // Found, remove it
                     if (item->key_release) item->key_release(item->entries[index].key);
@@ -319,7 +319,7 @@ char VPS_SwissDictionary_Remove
                     item->entries[index].hash = 0;
                     item->count--;
                     item->tombstones++;
-                    return 1;
+                    return VPS_OK;
                 }
             }
         }
@@ -328,5 +328,5 @@ char VPS_SwissDictionary_Remove
 
     } while (index != start_index);
 
-    return 0;
+    return VPS_FAIL;
 }

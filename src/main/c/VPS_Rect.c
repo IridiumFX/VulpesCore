@@ -1,7 +1,7 @@
 #include <vulpes/VPS_Types.h>
 #include <vulpes/VPS_Rect.h>
 
-char VPS_Rect_Init
+VPS_TYPE_RESULT VPS_Rect_Init
 (
 	struct VPS_Rect *rect
 	, struct VPS_Point position
@@ -10,11 +10,11 @@ char VPS_Rect_Init
 {
 	if (!rect)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	rect->position = position;
 	rect->size = size;
 
-	return 1;
+	return VPS_OK;
 }

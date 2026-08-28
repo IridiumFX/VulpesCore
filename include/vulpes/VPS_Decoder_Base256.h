@@ -1,4 +1,5 @@
 #pragma once
+#include <vulpes/VPS_Types.h>
 
 // Forward declarations
 struct VPS_Decoder;
@@ -14,7 +15,7 @@ struct VPS_Decoder;
  * @param decoder The pre-allocated decoder instance to construct.
  * @return 1 on success, 0 on failure.
  */
-char VPS_Decoder_Base256_Construct
+VPS_TYPE_RESULT VPS_Decoder_Base256_Construct
 (
 	struct VPS_Decoder* decoder
 );

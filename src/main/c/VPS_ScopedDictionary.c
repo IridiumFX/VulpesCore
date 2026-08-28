@@ -10,9 +10,9 @@
  * @brief A static helper function compatible with VPS_List's node_data_release.
  *        It knows how to properly release a VPS_ScopedDictionary_Entry and its contents.
  */
-static char _scoped_dictionary_entry_releaser(void *entry_data)
+static VPS_TYPE_RESULT _scoped_dictionary_entry_releaser(void *entry_data)
 {
-	if (!entry_data) return 1;
+	if (!entry_data) return VPS_OK;
 
 	struct VPS_ScopedDictionary_Entry *entry = entry_data;
 	// The dictionary context is stored in the parent list's generic data pointer.
@@ -30,7 +30,7 @@ static char _scoped_dictionary_entry_releaser(void *entry_data)
 	{
 		struct VPS_List_Node *version_node;
 
-		while (VPS_List_RemoveHead(entry->versions, &version_node))
+		while (!VPS_List_RemoveHead(entry->versions, &version_node))
 		{
 			if (dict && dict->data_release)
 			{
@@ -45,7 +45,7 @@ static char _scoped_dictionary_entry_releaser(void *entry_data)
 
 	free(entry);
 
-	return 1;
+	return VPS_OK;
 }
 
 #define DEFAULT_BUCKETS_COUNT		17
@@ -65,7 +65,7 @@ static char VPS_ScopedDictionary_PRIVATE_FindEntry
 	VPS_TYPE_SIZE hash;
 	VPS_TYPE_SIZE bucket_index;
 	VPS_TYPE_16S ordering;
-	char result;
+	VPS_TYPE_RESULT result;
 
 	if (hash_failed)
 	{
@@ -73,7 +73,7 @@ static char VPS_ScopedDictionary_PRIVATE_FindEntry
 	}
 
 	result = item->hash(key, &hash);
-	if (!result)
+	if (result)
 	{
 		if (hash_failed)
 		{
@@ -97,7 +97,7 @@ static char VPS_ScopedDictionary_PRIVATE_FindEntry
 		if (bucket_entry->hash == hash)
 		{
 			result = item->key_compare(key, bucket_entry->key, &ordering);
-			if (result && ordering == 0)
+			if (!result && ordering == 0)
 			{
 				*entry = bucket_entry;
 
@@ -111,7 +111,7 @@ static char VPS_ScopedDictionary_PRIVATE_FindEntry
 	return 0;
 }
 
-static char VPS_ScopedDictionary_PRIVATE_Rehash
+static VPS_TYPE_RESULT VPS_ScopedDictionary_PRIVATE_Rehash
 (
 	struct VPS_ScopedDictionary *item
 )
@@ -132,13 +132,13 @@ static char VPS_ScopedDictionary_PRIVATE_Rehash
 	new_bucket_count = item->buckets * item->growth_multiplier;
 	if (new_bucket_count <= item->buckets)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	new_bucket_vector = calloc(new_bucket_count, sizeof(struct VPS_List *));
 	if (!new_bucket_vector)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	for (i = 0; i < new_bucket_count; ++i)
@@ -152,7 +152,7 @@ static char VPS_ScopedDictionary_PRIVATE_Rehash
 			}
 			free(new_bucket_vector);
 
-			return 0;
+			return VPS_FAIL;
 		}
 
 		// Construct the new bucket list, providing the dictionary context and the releaser.
@@ -191,10 +191,10 @@ static char VPS_ScopedDictionary_PRIVATE_Rehash
 	}
 	free(old_bucket_vector);
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_ScopedDictionary_Allocate
+VPS_TYPE_RESULT VPS_ScopedDictionary_Allocate
 (
 	struct VPS_ScopedDictionary **item,
 	VPS_TYPE_SIZE buckets
@@ -202,11 +202,11 @@ char VPS_ScopedDictionary_Allocate
 {
 	struct VPS_ScopedDictionary *subject;
 	VPS_TYPE_SIZE bucket;
-	char result;
+	VPS_TYPE_RESULT result;
 
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	if (!buckets)
@@ -217,7 +217,7 @@ char VPS_ScopedDictionary_Allocate
 	subject = calloc(1, sizeof(struct VPS_ScopedDictionary));
 	if (!subject)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	subject->bucket_vector = calloc(buckets, sizeof(struct VPS_List *));
@@ -230,7 +230,7 @@ char VPS_ScopedDictionary_Allocate
 	for (bucket = 0; bucket < buckets; bucket++)
 	{
 		result = VPS_List_Allocate(&subject->bucket_vector[bucket]);
-		if (!result)
+		if (result)
 		{
 			goto cleanup;
 		}
@@ -239,7 +239,7 @@ char VPS_ScopedDictionary_Allocate
 	}
 
 	result = VPS_List_Allocate(&subject->scopeLog);
-	if (!result)
+	if (result)
 	{
 		goto cleanup;
 	}
@@ -247,24 +247,24 @@ char VPS_ScopedDictionary_Allocate
 
 	*item = subject;
 
-	return 1;
+	return VPS_OK;
 
 cleanup:
 
 	VPS_ScopedDictionary_Deconstruct(subject);
 	VPS_ScopedDictionary_Release(subject);
 
-	return 0;
+	return VPS_FAIL;
 }
 
-char VPS_ScopedDictionary_Construct
+VPS_TYPE_RESULT VPS_ScopedDictionary_Construct
 (
 	struct VPS_ScopedDictionary *item,
-	char (*hash)(void *key, VPS_TYPE_SIZE *key_hash),
-	char (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering),
-	char (*data_compare)(void *data_1, void *data_2, VPS_TYPE_16S *ordering),
-	char (*key_release)(void *key),
-	char (*data_release)(void *data),
+	VPS_TYPE_RESULT (*hash)(void *key, VPS_TYPE_SIZE *key_hash),
+	VPS_TYPE_RESULT (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering),
+	VPS_TYPE_RESULT (*data_compare)(void *data_1, void *data_2, VPS_TYPE_16S *ordering),
+	VPS_TYPE_RESULT (*key_release)(void *key),
+	VPS_TYPE_RESULT (*data_release)(void *data),
 	VPS_TYPE_SIZE growth_multiplier,
 	VPS_TYPE_SIZE load_percent_threshold,
 	VPS_TYPE_SIZE single_bucket_threshold
@@ -272,7 +272,7 @@ char VPS_ScopedDictionary_Construct
 {
 	if (!item || !hash || !key_compare)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	item->growth_multiplier = growth_multiplier > 1 ? growth_multiplier : 2;
@@ -288,25 +288,25 @@ char VPS_ScopedDictionary_Construct
 	return VPS_ScopedDictionary_EnterScope(item);
 }
 
-char VPS_ScopedDictionary_Deconstruct
+VPS_TYPE_RESULT VPS_ScopedDictionary_Deconstruct
 (
 	struct VPS_ScopedDictionary *item
 )
 {
 	VPS_TYPE_SIZE bucket;
-	char result;
+	VPS_TYPE_RESULT result;
 
 	if (!item || !item->scopeLog)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	while (item->scopeLog->head)
 	{
 		result = VPS_ScopedDictionary_LeaveScope(item);
-		if (!result)
+		if (result)
 		{
-			return 0;
+			return VPS_FAIL;
 		}
 	}
 
@@ -318,10 +318,10 @@ char VPS_ScopedDictionary_Deconstruct
 		}
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_ScopedDictionary_Release
+VPS_TYPE_RESULT VPS_ScopedDictionary_Release
 (
 	struct VPS_ScopedDictionary *item
 )
@@ -345,32 +345,32 @@ char VPS_ScopedDictionary_Release
 		free(item);
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_ScopedDictionary_EnterScope
+VPS_TYPE_RESULT VPS_ScopedDictionary_EnterScope
 (
 	struct VPS_ScopedDictionary *item
 )
 {
 	struct VPS_List *scopeLog;
 	struct VPS_List_Node *scopeLog_node;
-	char result;
+	VPS_TYPE_RESULT result;
 
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	result = VPS_List_Allocate(&scopeLog);
-	if (!result)
+	if (result)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 	VPS_List_Construct(scopeLog, 0, 0, 0);
 
 	result = VPS_List_Node_Allocate(&scopeLog_node);
-	if (!result)
+	if (result)
 	{
 		goto cleanup;
 	}
@@ -378,16 +378,16 @@ char VPS_ScopedDictionary_EnterScope
 	VPS_List_Node_Construct(scopeLog_node, scopeLog);
 	VPS_List_AddHead(item->scopeLog, scopeLog_node);
 
-	return 1;
+	return VPS_OK;
 
 cleanup:
 
 	VPS_List_Release(scopeLog);
 
-	return 0;
+	return VPS_FAIL;
 }
 
-char VPS_ScopedDictionary_LeaveScope
+VPS_TYPE_RESULT VPS_ScopedDictionary_LeaveScope
 (
 	struct VPS_ScopedDictionary *item
 )
@@ -398,17 +398,17 @@ char VPS_ScopedDictionary_LeaveScope
 	struct VPS_List_Node *version_node;
 	struct VPS_ScopedDictionary_Entry *entry;
 
-	char result;
+	VPS_TYPE_RESULT result;
 
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	result = VPS_List_RemoveHead(item->scopeLog, &scope_node);
-	if (!result)
+	if (result)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	changes = scope_node->data;
@@ -418,7 +418,7 @@ char VPS_ScopedDictionary_LeaveScope
 		entry = change_node->data;
 
 		result = VPS_List_RemoveHead(entry->versions, &version_node);
-		if (result)
+		if (!result)
 		{
 			if (item->data_release)
 			{
@@ -451,7 +451,7 @@ char VPS_ScopedDictionary_LeaveScope
 	VPS_List_Node_Deconstruct(scope_node);
 	VPS_List_Node_Release(scope_node);
 
-	return 1;
+	return VPS_OK;
 }
 
 char VPS_ScopedDictionary_Find
@@ -489,7 +489,7 @@ char VPS_ScopedDictionary_Find
 	return 1;
 }
 
-char VPS_ScopedDictionary_Add
+VPS_TYPE_RESULT VPS_ScopedDictionary_Add
 (
 	struct VPS_ScopedDictionary *item,
 	void *key,
@@ -508,7 +508,7 @@ char VPS_ScopedDictionary_Add
 	// 1. --- Validate Parameters & Get Current Scope ---
 	if (!item || !key || !item->scopeLog || !item->scopeLog->head)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 	current_changes_list = item->scopeLog->head->data;
 
@@ -516,7 +516,7 @@ char VPS_ScopedDictionary_Add
 	found = VPS_ScopedDictionary_PRIVATE_FindEntry(item, key, &entry, &key_hash, &hash_failed);
 	if (!found && hash_failed)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// 3. --- Handle the two paths: Entry Found vs. Entry Not Found ---
@@ -531,31 +531,31 @@ char VPS_ScopedDictionary_Add
 		// (the dictionary owns data passed to Add) and report success.
 		if (item->data_compare && entry->versions->head)
 		{
-			if (item->data_compare(data, entry->versions->head->data, &ordering) && ordering == 0)
+			if (item->data_compare(data, entry->versions->head->data, &ordering) == VPS_OK && ordering == 0)
 			{
 				if (item->data_release && data != entry->versions->head->data)
 				{
 					item->data_release(data);
 				}
-				return 1;
+				return VPS_OK;
 			}
 		}
 
 		// Add the new version.
-		if (!VPS_List_Node_Allocate(&version_node))
+		if (VPS_List_Node_Allocate(&version_node))
 		{
-			return 0;
+			return VPS_FAIL;
 		}
 		VPS_List_Node_Construct(version_node, data);
 		VPS_List_AddHead(entry->versions, version_node);
 
 		// Log this change in the current scope. If the log node cannot be
 		// created, roll the version push back so both stay in sync.
-		if (!VPS_List_Node_Allocate(&change_node))
+		if (VPS_List_Node_Allocate(&change_node))
 		{
 			VPS_List_RemoveHead(entry->versions, &version_node);
 			VPS_List_Node_Release(version_node);
-			return 0;
+			return VPS_FAIL;
 		}
 		VPS_List_Node_Construct(change_node, entry);
 		VPS_List_AddHead(current_changes_list, change_node);
@@ -569,20 +569,20 @@ char VPS_ScopedDictionary_Add
 
 		// a. Create the new entry object.
 		entry = calloc(1, sizeof(struct VPS_ScopedDictionary_Entry));
-		if (!entry) return 0;
+		if (!entry) return VPS_FAIL;
 
 		// b. Create and populate its versions list.
-		if (!VPS_List_Allocate(&entry->versions))
+		if (VPS_List_Allocate(&entry->versions))
 		{
 			free(entry);
-			return 0;
+			return VPS_FAIL;
 		}
 		VPS_List_Construct(entry->versions, 0, 0, 0);
-		if (!VPS_List_Node_Allocate(&version_node))
+		if (VPS_List_Node_Allocate(&version_node))
 		{
 			VPS_List_Release(entry->versions);
 			free(entry);
-			return 0;
+			return VPS_FAIL;
 		}
 		VPS_List_Node_Construct(version_node, data);
 		VPS_List_AddHead(entry->versions, version_node);
@@ -593,7 +593,7 @@ char VPS_ScopedDictionary_Add
 
 		// d. Add the new entry to the correct bucket.
 		bucket = item->bucket_vector[key_hash % item->buckets];
-		if (!VPS_List_Node_Allocate(&owner_node))
+		if (VPS_List_Node_Allocate(&owner_node))
 		{
 			goto path_b_cleanup;
 		}
@@ -603,7 +603,7 @@ char VPS_ScopedDictionary_Add
 		entry->owner_node = owner_node;
 
 		// f. Log this change in the current scope.
-		if (!VPS_List_Node_Allocate(&change_node))
+		if (VPS_List_Node_Allocate(&change_node))
 		{
 			VPS_List_Node_Release(owner_node);
 			goto path_b_cleanup;
@@ -627,7 +627,7 @@ char VPS_ScopedDictionary_Add
 		VPS_ScopedDictionary_PRIVATE_Rehash(item);
 	}
 
-	return 1;
+	return VPS_OK;
 
 path_b_cleanup:
 
@@ -636,10 +636,10 @@ path_b_cleanup:
 	VPS_List_Release(entry->versions);
 	free(entry);
 
-	return 0;
+	return VPS_FAIL;
 }
 
-char VPS_ScopedDictionary_Remove
+VPS_TYPE_RESULT VPS_ScopedDictionary_Remove
 (
 	struct VPS_ScopedDictionary *item,
 	void *key
@@ -651,20 +651,20 @@ char VPS_ScopedDictionary_Remove
 
 	if (!item || !key)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// A key with no entry at all is already removed; do not materialize one
 	// (the key parameter stays owned by the caller).
 	if (!VPS_ScopedDictionary_PRIVATE_FindEntry(item, key, &entry, &key_hash, &hash_failed))
 	{
-		return hash_failed ? 0 : 1;
+		return hash_failed ? VPS_FAIL : VPS_OK;
 	}
 
 	// Already logically removed (current version is the NULL tombstone)?
 	if (entry->versions->head && entry->versions->head->data == NULL)
 	{
-		return 1;
+		return VPS_OK;
 	}
 
 	// Hide the entry for the current scope by pushing a NULL version. This

@@ -6,7 +6,7 @@
 #include <vulpes/VPS_Types.h>
 #include <vulpes/VPS_Data.h>
 
-char VPS_Data_Allocate
+VPS_TYPE_RESULT VPS_Data_Allocate
 (
 	struct VPS_Data **item
 	, VPS_TYPE_SIZE size
@@ -17,7 +17,7 @@ char VPS_Data_Allocate
 
 	if (!item || limit > size)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	data = calloc
@@ -27,7 +27,7 @@ char VPS_Data_Allocate
 	);
 	if (!data)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	if (size > 0)
@@ -52,42 +52,42 @@ char VPS_Data_Allocate
 
 	*item = data;
 
-	return 1;
+	return VPS_OK;
 
 	cleanup:
 
 	VPS_Data_Release(data);
 
-	return 0;
+	return VPS_FAIL;
 }
 
-char VPS_Data_Construct
+VPS_TYPE_RESULT VPS_Data_Construct
 (
 	struct VPS_Data *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Data_Deconstruct
+VPS_TYPE_RESULT VPS_Data_Deconstruct
 (
 	struct VPS_Data *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Data_Release
+VPS_TYPE_RESULT VPS_Data_Release
 (
 	struct VPS_Data *item
 )
@@ -106,10 +106,10 @@ char VPS_Data_Release
 		free(item);
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Data_Copy
+VPS_TYPE_RESULT VPS_Data_Copy
 (
 	struct VPS_Data *item,
 	struct VPS_Data *destination,
@@ -120,7 +120,7 @@ char VPS_Data_Copy
 {
 	if (!item || !destination || !item->bytes || !destination->bytes)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// Bounds checking
@@ -128,7 +128,7 @@ char VPS_Data_Copy
 		size > destination->size || to > destination->size - size // Check destination bounds safely
 	)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	memcpy(destination->bytes + to, item->bytes + from, size);
@@ -138,10 +138,10 @@ char VPS_Data_Copy
 		destination->limit = to + size;
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Data_Clone
+VPS_TYPE_RESULT VPS_Data_Clone
 (
 	struct VPS_Data **item,
 	struct VPS_Data *source,
@@ -153,33 +153,33 @@ char VPS_Data_Clone
 
 	if (!item || !source || !source->bytes)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// Bounds checking (subtraction form, immune to from + size wrapping)
 	if (size > source->limit || from > source->limit - size)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	if (!VPS_Data_Allocate(&clone, size, size))
+	if (VPS_Data_Allocate(&clone, size, size))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	if (!VPS_Data_Construct(clone))
+	if (VPS_Data_Construct(clone))
 	{
 		VPS_Data_Release(clone);
-		return 0;
+		return VPS_FAIL;
 	}
 
 	memcpy(clone->bytes, source->bytes + from, size);
 	*item = clone;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Data_Resize
+VPS_TYPE_RESULT VPS_Data_Resize
 (
 	struct VPS_Data *item,
 	VPS_TYPE_SIZE new_size
@@ -189,13 +189,13 @@ char VPS_Data_Resize
 
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// Cannot resize a buffer we don't own
 	if (!item->own_bytes)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	if (new_size == 0)
@@ -210,7 +210,7 @@ char VPS_Data_Resize
 		if (!new_bytes)
 		{
 			// realloc failed, original block is untouched
-			return 0;
+			return VPS_FAIL;
 		}
 		item->bytes = new_bytes;
 	}
@@ -227,10 +227,10 @@ char VPS_Data_Resize
 		item->position = item->limit;
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Data_Expand
+VPS_TYPE_RESULT VPS_Data_Expand
 (
 	struct VPS_Data *item,
 	VPS_TYPE_SIZE delta
@@ -240,20 +240,20 @@ char VPS_Data_Expand
 
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	new_size = item->size + delta;
 	if (new_size < item->size)
 	{
 		// Overflow
-		return 0;
+		return VPS_FAIL;
 	}
 
 	return VPS_Data_Resize(item, new_size);
 }
 
-char VPS_Data_Compact
+VPS_TYPE_RESULT VPS_Data_Compact
 (
 	struct VPS_Data *item
 )
@@ -262,17 +262,17 @@ char VPS_Data_Compact
 
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	if (item->position == 0)
 	{
-		return 1; // Nothing to do (an empty buffer is trivially compact)
+		return VPS_OK; // Nothing to do (an empty buffer is trivially compact)
 	}
 
 	if (!item->bytes)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	length = item->limit - item->position;
@@ -286,10 +286,10 @@ char VPS_Data_Compact
 	item->limit = length;
 	item->position = 0;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Data_Wrap
+VPS_TYPE_RESULT VPS_Data_Wrap
 (
 	struct VPS_Data *item,
 	unsigned char *bytes,
@@ -298,7 +298,7 @@ char VPS_Data_Wrap
 {
 	if (!item || (!bytes && size > 0))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_Data_Deconstruct(item);
@@ -314,10 +314,10 @@ char VPS_Data_Wrap
 	item->position = 0;
 	item->limit = size;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Data_Unwrap
+VPS_TYPE_RESULT VPS_Data_Unwrap
 (
 	struct VPS_Data *item,
 	unsigned char **str,
@@ -326,14 +326,14 @@ char VPS_Data_Unwrap
 {
 	if (!item || !str || !size)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// Cannot unwrap a buffer we own, as the caller would
 	// not know whether to free it or not.
 	if (item->own_bytes)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	*str = item->bytes;
@@ -346,10 +346,10 @@ char VPS_Data_Unwrap
 	item->limit = 0;
 	item->position = 0;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Data_Seek
+VPS_TYPE_RESULT VPS_Data_Seek
 (
 	struct VPS_Data *item,
 	VPS_TYPE_SPAN offset,
@@ -360,7 +360,7 @@ char VPS_Data_Seek
 
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	switch (whence)
@@ -375,20 +375,20 @@ char VPS_Data_Seek
 			new_pos = (VPS_TYPE_SPAN)item->limit + offset; // offset is typically negative here
 			break;
 		default:
-			return 0; // Invalid 'whence'
+			return VPS_FAIL; // Invalid 'whence'
 	}
 
 	// Bounds check: position cannot go past the limit
 	if (new_pos < 0 || (VPS_TYPE_SIZE)new_pos > item->limit)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	item->position = (VPS_TYPE_SIZE)new_pos;
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Data_Attach
+VPS_TYPE_RESULT VPS_Data_Attach
 (
 	struct VPS_Data *item,
 	unsigned char **bytes,
@@ -397,12 +397,12 @@ char VPS_Data_Attach
 {
 	if (!item || !bytes || !size)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	if (!item->bytes)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// Return a pointer to the current read position
@@ -410,5 +410,5 @@ char VPS_Data_Attach
 	// Return the remaining readable bytes in the window [position, limit)
 	*size = item->limit - item->position;
 
-	return 1;
+	return VPS_OK;
 }

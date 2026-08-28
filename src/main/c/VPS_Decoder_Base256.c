@@ -9,7 +9,7 @@
  * This function copies the available data from the source buffer to the
  * destination buffer, resizing the destination if necessary.
  */
-static char PRIVATE_VPS_Decoder_Base256_Decode
+static VPS_TYPE_RESULT PRIVATE_VPS_Decoder_Base256_Decode
 (
 	struct VPS_Data* source,
 	struct VPS_Data* destination,
@@ -23,13 +23,13 @@ static char PRIVATE_VPS_Decoder_Base256_Decode
 
 	if (!source || !destination || !bytes_consumed)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// 1. Compact the destination buffer to preserve any unconsumed data.
-	if (!VPS_Data_Compact(destination))
+	if (VPS_Data_Compact(destination))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	bytes_to_copy = source->limit - source->position;
@@ -39,40 +39,40 @@ static char PRIVATE_VPS_Decoder_Base256_Decode
 	if (bytes_to_copy == 0)
 	{
 		*bytes_consumed = 0;
-		return 1;
+		return VPS_OK;
 	}
 
 	// Ensure destination has enough capacity (subtraction form avoids overflow)
 	if (destination->size - write_pos < bytes_to_copy)
 	{
 		// Attempt to expand the buffer to make room for the new data.
-		if (!VPS_Data_Resize(destination, write_pos + bytes_to_copy))
+		if (VPS_Data_Resize(destination, write_pos + bytes_to_copy))
 		{
-			return 0; // Resize failed
+			return VPS_FAIL; // Resize failed
 		}
 	}
 
 	// Copy the new data to the end of the existing valid data in the destination.
 	// VPS_Data_Copy updates the destination's limit.
-	if (!VPS_Data_Copy(source, destination, source->position, bytes_to_copy, write_pos))
+	if (VPS_Data_Copy(source, destination, source->position, bytes_to_copy, write_pos))
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// Report that we consumed all available bytes from the source
 	*bytes_consumed = bytes_to_copy;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Decoder_Base256_Construct
+VPS_TYPE_RESULT VPS_Decoder_Base256_Construct
 (
 	struct VPS_Decoder* decoder
 )
 {
 	if (!decoder)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// Use the generic construction function, providing our private decode implementation.

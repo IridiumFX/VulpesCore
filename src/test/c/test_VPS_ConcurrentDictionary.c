@@ -14,28 +14,28 @@ static int success_count = 0;
 static int failure_count = 0;
 
 // --- Helper functions for dictionary tests ---
-static char hash_string(void *key, VPS_TYPE_SIZE *key_hash)
+static VPS_TYPE_RESULT hash_string(void *key, VPS_TYPE_SIZE *key_hash)
 {
     // Use the public API for string hashing
     return VPS_Hash_Utils_String(key, key_hash);
 }
 
-static char compare_string(void *key_1, void *key_2, VPS_TYPE_16S *ordering)
+static VPS_TYPE_RESULT compare_string(void *key_1, void *key_2, VPS_TYPE_16S *ordering)
 {
     *ordering = (VPS_TYPE_16S)strcmp((const char*)key_1, (const char*)key_2);
-    return 1;
+    return VPS_OK;
 }
 
-static char release_string(void *key)
+static VPS_TYPE_RESULT release_string(void *key)
 {
     free(key);
-    return 1;
+    return VPS_OK;
 }
 
-static char release_int(void *data)
+static VPS_TYPE_RESULT release_int(void *data)
 {
     free(data);
-    return 1;
+    return VPS_OK;
 }
 
 // --- Concurrent Test Data ---
@@ -75,7 +75,7 @@ void *concurrent_operations(void *arg) {
 
         // Remove operation (only remove some to keep others for final check)
         if (i % 2 == 0) {
-            if (!VPS_ConcurrentDictionary_Remove(dict, key)) {
+            if (VPS_ConcurrentDictionary_Remove(dict, key)) {
                 // If remove failed (e.g. not found), we might need to free key/value if we still own them?
                 // But here we just added it, so it should be there unless another thread removed it (which shouldn't happen with unique keys per thread)
             }
@@ -107,8 +107,8 @@ static char test_concurrent_dictionary_basic()
     VPS_ConcurrentDictionary_Construct(dict, hash_string, compare_string, release_string, release_int, 2, 75, 5);
 
     // Add
-    TEST_ASSERT(VPS_ConcurrentDictionary_Add(dict, key1, val1));
-    TEST_ASSERT(VPS_ConcurrentDictionary_Add(dict, key2, val2));
+    TEST_ASSERT_OK(VPS_ConcurrentDictionary_Add(dict, key1, val1));
+    TEST_ASSERT_OK(VPS_ConcurrentDictionary_Add(dict, key2, val2));
 
     // Find
     TEST_ASSERT(VPS_ConcurrentDictionary_Find(dict, "hello", &found_val));
@@ -121,13 +121,13 @@ static char test_concurrent_dictionary_basic()
     TEST_ASSERT(!VPS_ConcurrentDictionary_Find(dict, "nonexistent", &found_val));
 
     // Remove
-    TEST_ASSERT(VPS_ConcurrentDictionary_Remove(dict, "hello"));
+    TEST_ASSERT_OK(VPS_ConcurrentDictionary_Remove(dict, "hello"));
     TEST_ASSERT(!VPS_ConcurrentDictionary_Find(dict, "hello", &found_val)); // Should not be found after removal
 
     // Add again
     char *key3 = strdup("newkey");
     int *val3 = (int*)malloc(sizeof(int)); *val3 = 300;
-    TEST_ASSERT(VPS_ConcurrentDictionary_Add(dict, key3, val3));
+    TEST_ASSERT_OK(VPS_ConcurrentDictionary_Add(dict, key3, val3));
     TEST_ASSERT(VPS_ConcurrentDictionary_Find(dict, "newkey", &found_val));
     TEST_ASSERT(*((int*)found_val) == 300);
 

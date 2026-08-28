@@ -11,8 +11,8 @@ struct VPS_List
 
     void *data;
 
-    char (*data_release)(void *data);
-    char (*node_data_release)(void *data);
+    VPS_TYPE_RESULT (*data_release)(void *data);
+    VPS_TYPE_RESULT (*node_data_release)(void *data);
 };
 
 struct VPS_List_Node
@@ -25,54 +25,54 @@ struct VPS_List_Node
     void *data;
 };
 
-char VPS_List_Allocate
+VPS_TYPE_RESULT VPS_List_Allocate
 (
     struct VPS_List **item
 );
-char VPS_List_Construct
+VPS_TYPE_RESULT VPS_List_Construct
 (
     struct VPS_List *item,
     void *data,
-    char (*data_release)(void *data),
-    char (*node_data_release)(void *data)
+    VPS_TYPE_RESULT (*data_release)(void *data),
+    VPS_TYPE_RESULT (*node_data_release)(void *data)
 );
-char VPS_List_Deconstruct
+VPS_TYPE_RESULT VPS_List_Deconstruct
 (
     struct VPS_List *item
 );
-char VPS_List_Release
+VPS_TYPE_RESULT VPS_List_Release
 (
     struct VPS_List *item
 );
-char VPS_List_Clear
+VPS_TYPE_RESULT VPS_List_Clear
 (
     struct VPS_List *item
 );
-char VPS_List_AddHead
+VPS_TYPE_RESULT VPS_List_AddHead
 (
     struct VPS_List *item,
     struct VPS_List_Node *node
 );
-char VPS_List_AddTail
+VPS_TYPE_RESULT VPS_List_AddTail
 (
     struct VPS_List *item,
     struct VPS_List_Node *node
 );
-char VPS_List_RemoveHead
+VPS_TYPE_RESULT VPS_List_RemoveHead
 (
     struct VPS_List *item,
     struct VPS_List_Node **node
 );
-char VPS_List_RemoveTail
+VPS_TYPE_RESULT VPS_List_RemoveTail
 (
     struct VPS_List *item,
     struct VPS_List_Node **node
 );
-char VPS_List_Apply
+VPS_TYPE_RESULT VPS_List_Apply
 (
     struct VPS_List *item,
     struct VPS_List_Node *start,
-    char (*fn)(struct VPS_List_Node *node, void *context),
+    VPS_TYPE_RESULT (*fn)(struct VPS_List_Node *node, void *context),
     void *context,
     char exit_on_error,
     struct VPS_List_Node **error_node
@@ -85,7 +85,7 @@ char VPS_List_Find
     void *context,
     struct VPS_List_Node **result
 );
-char VPS_List_Move
+VPS_TYPE_RESULT VPS_List_Move
 (
     struct VPS_List *item,
     struct VPS_List_Node *start,
@@ -94,34 +94,34 @@ char VPS_List_Move
     void *context
 );
 
-char VPS_List_Node_Allocate
+VPS_TYPE_RESULT VPS_List_Node_Allocate
 (
     struct VPS_List_Node **item
 );
-char VPS_List_Node_Construct
+VPS_TYPE_RESULT VPS_List_Node_Construct
 (
     struct VPS_List_Node *item,
     void *data
 );
-char VPS_List_Node_Deconstruct
+VPS_TYPE_RESULT VPS_List_Node_Deconstruct
 (
     struct VPS_List_Node *item
 );
-char VPS_List_Node_Release
+VPS_TYPE_RESULT VPS_List_Node_Release
 (
     struct VPS_List_Node *item
 );
-char VPS_List_Node_InsertBefore
+VPS_TYPE_RESULT VPS_List_Node_InsertBefore
 (
     struct VPS_List_Node *item,
     struct VPS_List_Node *node
 );
-char VPS_List_Node_InsertAfter
+VPS_TYPE_RESULT VPS_List_Node_InsertAfter
 (
     struct VPS_List_Node *item,
     struct VPS_List_Node *node
 );
-char VPS_List_Node_Remove
+VPS_TYPE_RESULT VPS_List_Node_Remove
 (
     struct VPS_List_Node *item
 );

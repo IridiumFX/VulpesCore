@@ -57,7 +57,7 @@ static char test_streamreader_pipeline()
     // It will read into its internal raw_buffer, then use the decoder
     // to process that data into our dest_buffer.
     VPS_TYPE_SIZE bytes_from_source = 0, bytes_consumed = 0, bytes_produced = 0, bytes_available = 0;
-    TEST_ASSERT(VPS_StreamReader_Read(stream_reader, 10, &bytes_from_source, &bytes_consumed, &bytes_produced, &bytes_available, pass_through_decoder, 0));
+    TEST_ASSERT_OK(VPS_StreamReader_Read(stream_reader, 10, &bytes_from_source, &bytes_consumed, &bytes_produced, &bytes_available, pass_through_decoder, 0));
 
     // Verify the results
     TEST_ASSERT(bytes_from_source == 10);
@@ -67,14 +67,14 @@ static char test_streamreader_pipeline()
 
     // 4. --- Perform a seek (skip) and another read ---
     // Skip the next 5 bytes ("test ")
-    TEST_ASSERT(VPS_StreamReader_Seek(stream_reader, 5, SEEK_CUR));
+    TEST_ASSERT_OK(VPS_StreamReader_Seek(stream_reader, 5, SEEK_CUR));
 
     // To test the sliding window, we'll manually "consume" the first 5 bytes
     // of the dest_buffer, leaving "is a " as unread data.
     dest_buffer->position = 5;
 
     // Read the next 2 bytes ("of")
-    TEST_ASSERT(VPS_StreamReader_Read(stream_reader, 2, &bytes_from_source, &bytes_consumed, &bytes_produced, &bytes_available, pass_through_decoder, 0));
+    TEST_ASSERT_OK(VPS_StreamReader_Read(stream_reader, 2, &bytes_from_source, &bytes_consumed, &bytes_produced, &bytes_available, pass_through_decoder, 0));
     TEST_ASSERT(bytes_produced == 2); // The decoder should report it produced 2 new bytes
     // The buffer should now contain the 5 unread bytes ("is a ") plus the 2 new bytes ("of")
     TEST_ASSERT(bytes_available == 7);

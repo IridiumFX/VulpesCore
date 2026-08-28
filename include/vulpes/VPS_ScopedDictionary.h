@@ -27,44 +27,44 @@ struct VPS_ScopedDictionary
 	VPS_TYPE_SIZE load_percent_threshold;
 	VPS_TYPE_SIZE single_bucket_threshold;
 	
-	char (*hash)(void *key, VPS_TYPE_SIZE *key_hash);
-	char (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering);
-	char (*data_compare)(void *data_1, void *data_2, VPS_TYPE_16S *ordering);
-	char (*key_release)(void *key);
-	char (*data_release)(void *data);
+	VPS_TYPE_RESULT (*hash)(void *key, VPS_TYPE_SIZE *key_hash);
+	VPS_TYPE_RESULT (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering);
+	VPS_TYPE_RESULT (*data_compare)(void *data_1, void *data_2, VPS_TYPE_16S *ordering);
+	VPS_TYPE_RESULT (*key_release)(void *key);
+	VPS_TYPE_RESULT (*data_release)(void *data);
 };
 
-char VPS_ScopedDictionary_Allocate
+VPS_TYPE_RESULT VPS_ScopedDictionary_Allocate
 (
 	struct VPS_ScopedDictionary **item,
 	VPS_TYPE_SIZE buckets
 );
-char VPS_ScopedDictionary_Construct
+VPS_TYPE_RESULT VPS_ScopedDictionary_Construct
 (
 	struct VPS_ScopedDictionary *item,
-	char (*hash)(void *key, VPS_TYPE_SIZE *key_hash),
-	char (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering),
-	char (*data_compare)(void *data_1, void *data_2, VPS_TYPE_16S *ordering),
-	char (*key_release)(void *key),
-	char (*data_release)(void *data),
+	VPS_TYPE_RESULT (*hash)(void *key, VPS_TYPE_SIZE *key_hash),
+	VPS_TYPE_RESULT (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering),
+	VPS_TYPE_RESULT (*data_compare)(void *data_1, void *data_2, VPS_TYPE_16S *ordering),
+	VPS_TYPE_RESULT (*key_release)(void *key),
+	VPS_TYPE_RESULT (*data_release)(void *data),
 	VPS_TYPE_SIZE growth_multiplier,
 	VPS_TYPE_SIZE load_percent_threshold,
 	VPS_TYPE_SIZE single_bucket_threshold
 );
-char VPS_ScopedDictionary_Deconstruct
+VPS_TYPE_RESULT VPS_ScopedDictionary_Deconstruct
 (
 	struct VPS_ScopedDictionary *item
 );
-char VPS_ScopedDictionary_Release
+VPS_TYPE_RESULT VPS_ScopedDictionary_Release
 (
 	struct VPS_ScopedDictionary *item
 );
 
-char VPS_ScopedDictionary_EnterScope
+VPS_TYPE_RESULT VPS_ScopedDictionary_EnterScope
 (
 	struct VPS_ScopedDictionary *item
 );
-char VPS_ScopedDictionary_LeaveScope
+VPS_TYPE_RESULT VPS_ScopedDictionary_LeaveScope
 (
 	struct VPS_ScopedDictionary *item
 );
@@ -75,13 +75,13 @@ char VPS_ScopedDictionary_Find
 	void *key,
 	void **data
 );
-char VPS_ScopedDictionary_Add
+VPS_TYPE_RESULT VPS_ScopedDictionary_Add
 (
 	struct VPS_ScopedDictionary *item,
 	void *key,
 	void *data
 );
-char VPS_ScopedDictionary_Remove
+VPS_TYPE_RESULT VPS_ScopedDictionary_Remove
 (
 	struct VPS_ScopedDictionary *item,
 	void *key

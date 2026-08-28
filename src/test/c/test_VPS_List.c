@@ -10,12 +10,12 @@ static int success_count = 0;
 static int failure_count = 0;
 
 static int g_release_counter = 0;
-static char _test_releaser(void *data) {
+static VPS_TYPE_RESULT _test_releaser(void *data) {
     if (data) {
         g_release_counter++;
         free(data);
     }
-    return 1;
+    return VPS_OK;
 }
 
 /**
@@ -24,15 +24,15 @@ static char _test_releaser(void *data) {
  */
 static char test_list_lifecycle() {
     struct VPS_List *list = 0;
-    TEST_ASSERT(VPS_List_Allocate(&list));
+    TEST_ASSERT_OK(VPS_List_Allocate(&list));
     TEST_ASSERT(list != 0);
 
-    TEST_ASSERT(VPS_List_Construct(list, 0, 0, 0));
+    TEST_ASSERT_OK(VPS_List_Construct(list, 0, 0, 0));
     TEST_ASSERT(list->head == 0);
     TEST_ASSERT(list->tail == 0);
     TEST_ASSERT(list->count == 0);
 
-    TEST_ASSERT(VPS_List_Deconstruct(list));
+    TEST_ASSERT_OK(VPS_List_Deconstruct(list));
     VPS_List_Release(list);
     return 1;
 }
@@ -68,20 +68,20 @@ static char test_list_add_remove() {
     TEST_ASSERT(list->tail->back == n2);
 
     // Remove head (1) -> List should be [2, 3]
-    TEST_ASSERT(VPS_List_RemoveHead(list, &removed));
+    TEST_ASSERT_OK(VPS_List_RemoveHead(list, &removed));
     TEST_ASSERT(removed == n1);
     TEST_ASSERT(list->count == 2);
     TEST_ASSERT(list->head == n2);
 
     // Remove tail (3) -> List should be [2]
-    TEST_ASSERT(VPS_List_RemoveTail(list, &removed));
+    TEST_ASSERT_OK(VPS_List_RemoveTail(list, &removed));
     TEST_ASSERT(removed == n3);
     TEST_ASSERT(list->count == 1);
     TEST_ASSERT(list->head == n2);
     TEST_ASSERT(list->tail == n2);
 
     // Remove last item (2) -> List should be empty
-    TEST_ASSERT(VPS_List_RemoveHead(list, &removed));
+    TEST_ASSERT_OK(VPS_List_RemoveHead(list, &removed));
     TEST_ASSERT(removed == n2);
     TEST_ASSERT(list->count == 0);
     TEST_ASSERT(list->head == 0);
@@ -132,10 +132,10 @@ static char test_list_clear_with_releaser() {
 
 static int g_apply_visits = 0;
 
-static char _apply_fail_on_two(struct VPS_List_Node *node, void *context) {
+static VPS_TYPE_RESULT _apply_fail_on_two(struct VPS_List_Node *node, void *context) {
     (void)context;
     g_apply_visits++;
-    return (char)((VPS_TYPE_SIZE)node->data != 2);
+    return (VPS_TYPE_SIZE)node->data == 2 ? VPS_FAIL : VPS_OK;
 }
 
 /**
@@ -159,14 +159,14 @@ static char test_list_apply_error_modes() {
 
     // exit_on_error = 1: stops at node 2
     g_apply_visits = 0;
-    TEST_ASSERT(!VPS_List_Apply(list, 0, _apply_fail_on_two, 0, 1, &error_node));
+    TEST_ASSERT_FAIL(VPS_List_Apply(list, 0, _apply_fail_on_two, 0, 1, &error_node));
     TEST_ASSERT(g_apply_visits == 2);
     TEST_ASSERT(error_node == nodes[1]);
 
     // exit_on_error = 0: visits all three, still reports overall failure
     g_apply_visits = 0;
     error_node = 0;
-    TEST_ASSERT(!VPS_List_Apply(list, 0, _apply_fail_on_two, 0, 0, &error_node));
+    TEST_ASSERT_FAIL(VPS_List_Apply(list, 0, _apply_fail_on_two, 0, 0, &error_node));
     TEST_ASSERT(g_apply_visits == 3);
     TEST_ASSERT(error_node == nodes[1]);
 

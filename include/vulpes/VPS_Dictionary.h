@@ -23,33 +23,33 @@ struct VPS_Dictionary
 	VPS_TYPE_SIZE load_percent_threshold;
 	VPS_TYPE_SIZE single_bucket_threshold;
 
-	char (*hash)(void *key, VPS_TYPE_SIZE *key_hash);
-	char (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering);
-	char (*key_release)(void *key);
-	char (*data_release)(void *data);
+	VPS_TYPE_RESULT (*hash)(void *key, VPS_TYPE_SIZE *key_hash);
+	VPS_TYPE_RESULT (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering);
+	VPS_TYPE_RESULT (*key_release)(void *key);
+	VPS_TYPE_RESULT (*data_release)(void *data);
 };
 
-char VPS_Dictionary_Allocate
+VPS_TYPE_RESULT VPS_Dictionary_Allocate
 (
 	struct VPS_Dictionary **item,
 	VPS_TYPE_SIZE buckets
 );
-char VPS_Dictionary_Construct
+VPS_TYPE_RESULT VPS_Dictionary_Construct
 (
 	struct VPS_Dictionary *item,
-	char (*hash)(void *key, VPS_TYPE_SIZE *key_hash),
-	char (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering),
-	char (*key_release)(void *key),
-	char (*data_release)(void *data),
+	VPS_TYPE_RESULT (*hash)(void *key, VPS_TYPE_SIZE *key_hash),
+	VPS_TYPE_RESULT (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering),
+	VPS_TYPE_RESULT (*key_release)(void *key),
+	VPS_TYPE_RESULT (*data_release)(void *data),
 	VPS_TYPE_SIZE growth_multiplier,
 	VPS_TYPE_SIZE load_percent_threshold,
 	VPS_TYPE_SIZE single_bucket_threshold
 );
-char VPS_Dictionary_Deconstruct
+VPS_TYPE_RESULT VPS_Dictionary_Deconstruct
 (
 	struct VPS_Dictionary *item
 );
-char VPS_Dictionary_Release
+VPS_TYPE_RESULT VPS_Dictionary_Release
 (
 	struct VPS_Dictionary *item
 );
@@ -60,13 +60,13 @@ char VPS_Dictionary_Find
 	void *key,
 	void **data
 );
-char VPS_Dictionary_Add
+VPS_TYPE_RESULT VPS_Dictionary_Add
 (
 	struct VPS_Dictionary *item,
 	void *key,
 	void *data
 );
-char VPS_Dictionary_Remove
+VPS_TYPE_RESULT VPS_Dictionary_Remove
 (
 	struct VPS_Dictionary *item,
 	void *key

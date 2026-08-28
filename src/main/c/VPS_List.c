@@ -2,38 +2,38 @@
 #include <vulpes/VPS_Types.h>
 #include <vulpes/VPS_List.h>
 
-char VPS_List_Allocate
+VPS_TYPE_RESULT VPS_List_Allocate
 (
 	struct VPS_List **item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	struct VPS_List *subject = calloc(1, sizeof(struct VPS_List));
 	if (!subject)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	*item = subject;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_Construct
+VPS_TYPE_RESULT VPS_List_Construct
 (
 	struct VPS_List *item,
 	void *data,
-	char (*data_release)(void *data),
-	char (*node_data_release)(void *data)
+	VPS_TYPE_RESULT (*data_release)(void *data),
+	VPS_TYPE_RESULT (*node_data_release)(void *data)
 )
 {
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_List_Clear(item);
@@ -43,17 +43,17 @@ char VPS_List_Construct
 	item->node_data_release = node_data_release;
 	item->count = 0;
 	
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_Deconstruct
+VPS_TYPE_RESULT VPS_List_Deconstruct
 (
 	struct VPS_List *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_List_Clear(item);
@@ -66,10 +66,10 @@ char VPS_List_Deconstruct
 	item->data = 0;
 	item->data_release = 0;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_Release
+VPS_TYPE_RESULT VPS_List_Release
 (
 	struct VPS_List *item
 )
@@ -81,10 +81,10 @@ char VPS_List_Release
 		free(item);
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_Clear
+VPS_TYPE_RESULT VPS_List_Clear
 (
 	struct VPS_List *item
 )
@@ -92,7 +92,7 @@ char VPS_List_Clear
 	struct VPS_List_Node *node;
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	while (item->head)
@@ -109,10 +109,10 @@ char VPS_List_Clear
 	}
 
 	item->count = 0;
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_AddHead
+VPS_TYPE_RESULT VPS_List_AddHead
 (
 	struct VPS_List *item,
 	struct VPS_List_Node *node
@@ -120,7 +120,7 @@ char VPS_List_AddHead
 {
 	if (!item || !node)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_List_Node_Remove(node);
@@ -141,10 +141,10 @@ char VPS_List_AddHead
 	item->head = node;
 	item->count++;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_AddTail
+VPS_TYPE_RESULT VPS_List_AddTail
 (
 	struct VPS_List *item,
 	struct VPS_List_Node *node
@@ -152,7 +152,7 @@ char VPS_List_AddTail
 {
 	if (!item || !node)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_List_Node_Remove(node);
@@ -173,10 +173,10 @@ char VPS_List_AddTail
 	item->tail = node;
 	item->count++;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_RemoveHead
+VPS_TYPE_RESULT VPS_List_RemoveHead
 (
 	struct VPS_List *item,
 	struct VPS_List_Node **node
@@ -186,7 +186,7 @@ char VPS_List_RemoveHead
 
 	if (!item || !item->head)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	temp = item->head;
@@ -210,10 +210,10 @@ char VPS_List_RemoveHead
 	temp->back = 0;
 	
 	item->count--;
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_RemoveTail
+VPS_TYPE_RESULT VPS_List_RemoveTail
 (
 	struct VPS_List *item,
 	struct VPS_List_Node **node
@@ -223,7 +223,7 @@ char VPS_List_RemoveTail
 
 	if (!item || !item->tail)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	temp = item->tail;
@@ -247,14 +247,14 @@ char VPS_List_RemoveTail
 	temp->back = 0;
 
 	item->count--;
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_Apply
+VPS_TYPE_RESULT VPS_List_Apply
 (
 	struct VPS_List *item,
     struct VPS_List_Node *start,
-	char (*fn)(struct VPS_List_Node *node, void *context),
+	VPS_TYPE_RESULT (*fn)(struct VPS_List_Node *node, void *context),
 	void *context,
 	char exit_on_error,
 	struct VPS_List_Node **error_node
@@ -262,7 +262,7 @@ char VPS_List_Apply
 {
 	struct VPS_List_Node *temp;
 	char all_succeeded;
-	char result;
+	VPS_TYPE_RESULT result;
 
 	if (!item || !fn)
 	{
@@ -271,7 +271,7 @@ char VPS_List_Apply
 			*error_node = 0;
 		}
 
-		return 0;
+		return VPS_FAIL;
 	}
 
 	temp = item->head;
@@ -285,7 +285,7 @@ char VPS_List_Apply
 			{
 				*error_node = start;
 			}
-			return 0;
+			return VPS_FAIL;
 		}
 	}
 
@@ -294,7 +294,7 @@ char VPS_List_Apply
 	while (temp)
 	{
 		result = fn(temp, context);
-		if (!result)
+		if (result)
 		{
 			if (all_succeeded && error_node)
 			{
@@ -305,14 +305,16 @@ char VPS_List_Apply
 
 			if (exit_on_error)
 			{
-				return 0;
+				return VPS_FAIL;
 			}
 		}
 
 		temp = temp->next;
 	}
 
-	return all_succeeded;
+	// all_succeeded stays a flag: it records whether every node worked, and
+	// the caller learns which one failed through error_node.
+	return all_succeeded ? VPS_OK : VPS_FAIL;
 }
 
 char VPS_List_Find
@@ -360,7 +362,7 @@ char VPS_List_Find
 	return 0;
 }
 
-char VPS_List_Move
+VPS_TYPE_RESULT VPS_List_Move
 (
 	struct VPS_List *item,
 	struct VPS_List_Node *start,
@@ -375,12 +377,12 @@ char VPS_List_Move
 
 	if (!item || !destination || !condition)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	if (item == destination)
 	{
-		return 1;
+		return VPS_OK;
 	}
 
 	temp = item->head;
@@ -388,7 +390,7 @@ char VPS_List_Move
 	{
 		if (start->parent != item)
 		{
-			return 0;
+			return VPS_FAIL;
 		}
 		temp = start;
 	}
@@ -407,10 +409,10 @@ char VPS_List_Move
 		temp = next_node;
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_Node_Allocate
+VPS_TYPE_RESULT VPS_List_Node_Allocate
 (
 	struct VPS_List_Node **item
 )
@@ -419,7 +421,7 @@ char VPS_List_Node_Allocate
 
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	node = calloc(1, sizeof(struct VPS_List_Node));
@@ -427,15 +429,15 @@ char VPS_List_Node_Allocate
 	{
 		*item = 0;
 
-		return 0;
+		return VPS_FAIL;
 	}
 
 	*item = node;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_Node_Construct
+VPS_TYPE_RESULT VPS_List_Node_Construct
 (
 	struct VPS_List_Node *item,
 	void *data
@@ -443,43 +445,43 @@ char VPS_List_Node_Construct
 {
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	item->data = data;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_Node_Deconstruct
+VPS_TYPE_RESULT VPS_List_Node_Deconstruct
 (
 	struct VPS_List_Node *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_Node_Release
+VPS_TYPE_RESULT VPS_List_Node_Release
 (
 	struct VPS_List_Node *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	free(item);
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_Node_InsertBefore
+VPS_TYPE_RESULT VPS_List_Node_InsertBefore
 (
 	struct VPS_List_Node *item,
 	struct VPS_List_Node *node
@@ -487,7 +489,7 @@ char VPS_List_Node_InsertBefore
 {
 	if (!item || !item->parent || !node || node->parent || node->next || node->back)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	node->parent = item->parent;
@@ -506,10 +508,10 @@ char VPS_List_Node_InsertBefore
 	item->back = node;
 	item->parent->count++;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_Node_InsertAfter
+VPS_TYPE_RESULT VPS_List_Node_InsertAfter
 (
 	struct VPS_List_Node *item,
 	struct VPS_List_Node *node
@@ -517,7 +519,7 @@ char VPS_List_Node_InsertAfter
 {
 	if (!item || !item->parent || !node || node->parent || node->next || node->back)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	node->parent = item->parent;
@@ -536,17 +538,17 @@ char VPS_List_Node_InsertAfter
 	item->next = node;
 	item->parent->count++;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_List_Node_Remove
+VPS_TYPE_RESULT VPS_List_Node_Remove
 (
 	struct VPS_List_Node *item
 )
 {
 	if (!item || !item->parent)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	item->parent->count--;
@@ -573,5 +575,5 @@ char VPS_List_Node_Remove
 	item->next = 0;
 	item->back = 0;
 
-	return 1;
+	return VPS_OK;
 }

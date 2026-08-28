@@ -14,35 +14,35 @@ struct VPS_StreamWriter
 	int file_handle;
 };
 
-char VPS_StreamWriter_Allocate
+VPS_TYPE_RESULT VPS_StreamWriter_Allocate
 (
 	struct VPS_StreamWriter **item
 );
 
-char VPS_StreamWriter_Construct
+VPS_TYPE_RESULT VPS_StreamWriter_Construct
 (
 	struct VPS_StreamWriter *item
 	, int file_handle
 );
 
-char VPS_StreamWriter_Deconstruct
+VPS_TYPE_RESULT VPS_StreamWriter_Deconstruct
 (
 	struct VPS_StreamWriter *item
 );
 
-char VPS_StreamWriter_Release
+VPS_TYPE_RESULT VPS_StreamWriter_Release
 (
 	struct VPS_StreamWriter *item
 );
 
-char VPS_StreamWriter_Write
+VPS_TYPE_RESULT VPS_StreamWriter_Write
 (
 	struct VPS_StreamWriter *item
 	, const unsigned char *data
 	, VPS_TYPE_SIZE size
 );
 
-char VPS_StreamWriter_Flush
+VPS_TYPE_RESULT VPS_StreamWriter_Flush
 (
 	struct VPS_StreamWriter *item
 );

@@ -15,16 +15,16 @@ static int failure_count = 0;
 static int g_key_release_count = 0;
 static int g_data_release_count = 0;
 
-static char _test_dict_key_releaser(void *key) {
+static VPS_TYPE_RESULT _test_dict_key_releaser(void *key) {
     g_key_release_count++;
     free(key);
-    return 1;
+    return VPS_OK;
 }
 
-static char _test_dict_data_releaser(void *data) {
+static VPS_TYPE_RESULT _test_dict_data_releaser(void *data) {
     g_data_release_count++;
     free(data);
-    return 1;
+    return VPS_OK;
 }
 
 /**
@@ -49,8 +49,8 @@ static char test_dict_add_find_remove() {
         0, 0, 0);
 
     // 1. Add initial items
-    TEST_ASSERT(VPS_Dictionary_Add(dict, key1, data1));
-    TEST_ASSERT(VPS_Dictionary_Add(dict, key2, data2));
+    TEST_ASSERT_OK(VPS_Dictionary_Add(dict, key1, data1));
+    TEST_ASSERT_OK(VPS_Dictionary_Add(dict, key2, data2));
     TEST_ASSERT(dict->total_entries == 2);
 
     // 2. Find items
@@ -66,7 +66,7 @@ static char test_dict_add_find_remove() {
     int *data1_updated = malloc(sizeof(int));
     *data1_updated = 101;
     g_data_release_count = 0;
-    TEST_ASSERT(VPS_Dictionary_Add(dict, "key1", data1_updated));
+    TEST_ASSERT_OK(VPS_Dictionary_Add(dict, "key1", data1_updated));
     TEST_ASSERT(dict->total_entries == 2); // Count should not change
     TEST_ASSERT(g_data_release_count == 1); // Old data should have been released
 
@@ -76,7 +76,7 @@ static char test_dict_add_find_remove() {
     // 4. Remove an item
     g_key_release_count = 0;
     g_data_release_count = 0;
-    TEST_ASSERT(VPS_Dictionary_Remove(dict, "key1"));
+    TEST_ASSERT_OK(VPS_Dictionary_Remove(dict, "key1"));
     TEST_ASSERT(dict->total_entries == 1);
     TEST_ASSERT(g_key_release_count == 1); // Key should be released
     TEST_ASSERT(g_data_release_count == 1); // Data should be released

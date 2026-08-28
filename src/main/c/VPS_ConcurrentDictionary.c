@@ -3,7 +3,7 @@
 #include <vulpes/VPS_Types.h>
 #include <vulpes/VPS_ConcurrentDictionary.h>
 
-char VPS_ConcurrentDictionary_Allocate
+VPS_TYPE_RESULT VPS_ConcurrentDictionary_Allocate
 (
     struct VPS_ConcurrentDictionary **item,
     VPS_TYPE_SIZE buckets
@@ -13,39 +13,39 @@ char VPS_ConcurrentDictionary_Allocate
 
     if (!item)
     {
-        return 0;
+        return VPS_FAIL;
     }
 
     subject = calloc(1, sizeof(struct VPS_ConcurrentDictionary));
     if (!subject)
     {
-        return 0;
+        return VPS_FAIL;
     }
 
-    if (!VPS_Dictionary_Allocate(&subject->dictionary, buckets))
+    if (VPS_Dictionary_Allocate(&subject->dictionary, buckets))
     {
         free(subject);
-        return 0;
+        return VPS_FAIL;
     }
 
     if (pthread_mutex_init(&subject->mutex, NULL) != 0)
     {
         VPS_Dictionary_Release(subject->dictionary);
         free(subject);
-        return 0;
+        return VPS_FAIL;
     }
 
     *item = subject;
-    return 1;
+    return VPS_OK;
 }
 
-char VPS_ConcurrentDictionary_Construct
+VPS_TYPE_RESULT VPS_ConcurrentDictionary_Construct
 (
     struct VPS_ConcurrentDictionary *item,
-    char (*hash)(void *key, VPS_TYPE_SIZE *key_hash),
-    char (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering),
-    char (*key_release)(void *key),
-    char (*data_release)(void *data),
+    VPS_TYPE_RESULT (*hash)(void *key, VPS_TYPE_SIZE *key_hash),
+    VPS_TYPE_RESULT (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering),
+    VPS_TYPE_RESULT (*key_release)(void *key),
+    VPS_TYPE_RESULT (*data_release)(void *data),
     VPS_TYPE_SIZE growth_multiplier,
     VPS_TYPE_SIZE load_percent_threshold,
     VPS_TYPE_SIZE single_bucket_threshold
@@ -53,7 +53,7 @@ char VPS_ConcurrentDictionary_Construct
 {
     if (!item)
     {
-        return 0;
+        return VPS_FAIL;
     }
 
     return VPS_Dictionary_Construct(
@@ -68,14 +68,14 @@ char VPS_ConcurrentDictionary_Construct
     );
 }
 
-char VPS_ConcurrentDictionary_Deconstruct
+VPS_TYPE_RESULT VPS_ConcurrentDictionary_Deconstruct
 (
     struct VPS_ConcurrentDictionary *item
 )
 {
     if (!item)
     {
-        return 0;
+        return VPS_FAIL;
     }
 
     // The mutex must stay valid here: Release re-runs Deconstruct, so the
@@ -84,10 +84,10 @@ char VPS_ConcurrentDictionary_Deconstruct
     VPS_Dictionary_Deconstruct(item->dictionary);
     pthread_mutex_unlock(&item->mutex);
 
-    return 1;
+    return VPS_OK;
 }
 
-char VPS_ConcurrentDictionary_Release
+VPS_TYPE_RESULT VPS_ConcurrentDictionary_Release
 (
     struct VPS_ConcurrentDictionary *item
 )
@@ -99,7 +99,7 @@ char VPS_ConcurrentDictionary_Release
         VPS_Dictionary_Release(item->dictionary);
         free(item);
     }
-    return 1;
+    return VPS_OK;
 }
 
 char VPS_ConcurrentDictionary_Find
@@ -123,18 +123,18 @@ char VPS_ConcurrentDictionary_Find
     return result;
 }
 
-char VPS_ConcurrentDictionary_Add
+VPS_TYPE_RESULT VPS_ConcurrentDictionary_Add
 (
     struct VPS_ConcurrentDictionary *item,
     void *key,
     void *data
 )
 {
-    char result;
+    VPS_TYPE_RESULT result;
 
     if (!item)
     {
-        return 0;
+        return VPS_FAIL;
     }
 
     pthread_mutex_lock(&item->mutex);
@@ -144,17 +144,17 @@ char VPS_ConcurrentDictionary_Add
     return result;
 }
 
-char VPS_ConcurrentDictionary_Remove
+VPS_TYPE_RESULT VPS_ConcurrentDictionary_Remove
 (
     struct VPS_ConcurrentDictionary *item,
     void *key
 )
 {
-    char result;
+    VPS_TYPE_RESULT result;
 
     if (!item)
     {
-        return 0;
+        return VPS_FAIL;
     }
 
     pthread_mutex_lock(&item->mutex);

@@ -15,10 +15,10 @@ static int failure_count = 0;
 static int g_item_release_count = 0;
 
 // Simple releaser for string items used in tests
-static char _test_set_item_releaser(void *item) {
+static VPS_TYPE_RESULT _test_set_item_releaser(void *item) {
     g_item_release_count++;
     free(item);
-    return 1;
+    return VPS_OK;
 }
 
 /**
@@ -31,17 +31,17 @@ static char test_set_add_contains_remove() {
     char *item2 = strdup("item2");
 
     // 1. Allocate and Construct
-    TEST_ASSERT(VPS_Set_Allocate(&set, 17));
+    TEST_ASSERT_OK(VPS_Set_Allocate(&set, 17));
     TEST_ASSERT(set != 0);
-    TEST_ASSERT(VPS_Set_Construct(set,
+    TEST_ASSERT_OK(VPS_Set_Construct(set,
         VPS_Hash_Utils_String,
         VPS_Compare_Utils_String,
         _test_set_item_releaser,
         0, 0, 0));
 
     // 2. Add initial items
-    TEST_ASSERT(VPS_Set_Add(set, item1));
-    TEST_ASSERT(VPS_Set_Add(set, item2));
+    TEST_ASSERT_OK(VPS_Set_Add(set, item1));
+    TEST_ASSERT_OK(VPS_Set_Add(set, item2));
     TEST_ASSERT(set->total_entries == 2);
 
     // 3. Check for existence
@@ -51,14 +51,14 @@ static char test_set_add_contains_remove() {
 
     // 4. Add a duplicate item - should be a no-op
     char *item1_dup = strdup("item1"); // Use a different pointer to the same string content
-    TEST_ASSERT(VPS_Set_Add(set, item1_dup));
+    TEST_ASSERT_OK(VPS_Set_Add(set, item1_dup));
     TEST_ASSERT(set->total_entries == 2); // Count should not change
     // The set should not take ownership of the duplicate, so we must free it.
     free(item1_dup);
 
     // 5. Remove an item
     g_item_release_count = 0;
-    TEST_ASSERT(VPS_Set_Remove(set, "item1"));
+    TEST_ASSERT_OK(VPS_Set_Remove(set, "item1"));
     TEST_ASSERT(set->total_entries == 1);
     TEST_ASSERT(g_item_release_count == 1); // Item should be released
 

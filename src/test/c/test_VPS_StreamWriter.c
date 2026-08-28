@@ -33,11 +33,11 @@ static char test_streamwriter_pipeline()
     VPS_StreamWriter_Construct(stream_writer, fh);
 
     // 2. --- Write data ---
-    TEST_ASSERT(VPS_StreamWriter_Write(stream_writer, (const unsigned char*)test_data_1, strlen(test_data_1)));
-    TEST_ASSERT(VPS_StreamWriter_Write(stream_writer, (const unsigned char*)test_data_2, strlen(test_data_2)));
+    TEST_ASSERT_OK(VPS_StreamWriter_Write(stream_writer, (const unsigned char*)test_data_1, strlen(test_data_1)));
+    TEST_ASSERT_OK(VPS_StreamWriter_Write(stream_writer, (const unsigned char*)test_data_2, strlen(test_data_2)));
 
     // 3. --- Flush and Cleanup ---
-    TEST_ASSERT(VPS_StreamWriter_Flush(stream_writer));
+    TEST_ASSERT_OK(VPS_StreamWriter_Flush(stream_writer));
 
     VPS_StreamWriter_Release(stream_writer);
     close(fh);

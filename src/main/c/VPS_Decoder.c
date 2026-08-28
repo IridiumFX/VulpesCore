@@ -4,29 +4,29 @@
 #include <vulpes/VPS_Data.h>
 #include <vulpes/VPS_Decoder.h>
 
-char VPS_Decoder_Allocate
+VPS_TYPE_RESULT VPS_Decoder_Allocate
 (
 	struct VPS_Decoder **item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	*item = calloc(1, sizeof(struct VPS_Decoder));
 	if (!*item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Decoder_Construct
+VPS_TYPE_RESULT VPS_Decoder_Construct
 (
 	struct VPS_Decoder *item,
-	char (*decode)
+	VPS_TYPE_RESULT (*decode)
 	(
 		struct VPS_Data* source,
 		struct VPS_Data* destination,
@@ -38,30 +38,30 @@ char VPS_Decoder_Construct
 	// The decode callback is invoked unguarded by the stream readers.
 	if (!item || !decode)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	item->decode = decode;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Decoder_Deconstruct
+VPS_TYPE_RESULT VPS_Decoder_Deconstruct
 (
 	struct VPS_Decoder *item
 )
 {
 	if (!item)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	item->decode = NULL;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Decoder_Release
+VPS_TYPE_RESULT VPS_Decoder_Release
 (
 	struct VPS_Decoder *item
 )
@@ -72,5 +72,5 @@ char VPS_Decoder_Release
 		free(item);
 	}
 
-	return 1;
+	return VPS_OK;
 }

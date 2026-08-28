@@ -6,112 +6,112 @@ struct VPS_DataReader
 	struct VPS_Data* source;
 };
 
-char VPS_DataReader_Allocate
+VPS_TYPE_RESULT VPS_DataReader_Allocate
 (
 	struct VPS_DataReader** item
 );
 
-char VPS_DataReader_Construct
+VPS_TYPE_RESULT VPS_DataReader_Construct
 (
 	struct VPS_DataReader* item,
 	struct VPS_Data* source
 );
 
-char VPS_DataReader_Deconstruct
+VPS_TYPE_RESULT VPS_DataReader_Deconstruct
 (
 	struct VPS_DataReader* item
 );
 
-char VPS_DataReader_Release
+VPS_TYPE_RESULT VPS_DataReader_Release
 (
 	struct VPS_DataReader* item
 );
 
-char VPS_DataReader_Remaining
+VPS_TYPE_RESULT VPS_DataReader_Remaining
 (
 	struct VPS_DataReader* reader,
 	VPS_TYPE_SIZE *remaining
 );
 
-char VPS_DataReader_Read8U
+VPS_TYPE_RESULT VPS_DataReader_Read8U
 (
 	struct VPS_DataReader* reader,
 	VPS_TYPE_8U* value
 );
 
-char VPS_DataReader_Read16UBE
+VPS_TYPE_RESULT VPS_DataReader_Read16UBE
 (
 	struct VPS_DataReader* reader,
 	VPS_TYPE_16U* value
 );
 
-char VPS_DataReader_Read16ULE
+VPS_TYPE_RESULT VPS_DataReader_Read16ULE
 (
 	struct VPS_DataReader* reader,
 	VPS_TYPE_16U* value
 );
 
-char VPS_DataReader_Read16SBE
+VPS_TYPE_RESULT VPS_DataReader_Read16SBE
 (
 	struct VPS_DataReader* reader,
 	VPS_TYPE_16S* value
 );
 
-char VPS_DataReader_Read16SLE
+VPS_TYPE_RESULT VPS_DataReader_Read16SLE
 (
 	struct VPS_DataReader* reader,
 	VPS_TYPE_16S* value
 );
 
-char VPS_DataReader_Read32UBE
+VPS_TYPE_RESULT VPS_DataReader_Read32UBE
 (
 	struct VPS_DataReader* reader,
 	VPS_TYPE_32U* value
 );
 
-char VPS_DataReader_Read32ULE
+VPS_TYPE_RESULT VPS_DataReader_Read32ULE
 (
 	struct VPS_DataReader* reader,
 	VPS_TYPE_32U* value
 );
 
-char VPS_DataReader_Read32SBE
+VPS_TYPE_RESULT VPS_DataReader_Read32SBE
 (
 	struct VPS_DataReader* reader,
 	VPS_TYPE_32S* value
 );
 
-char VPS_DataReader_Read32SLE
+VPS_TYPE_RESULT VPS_DataReader_Read32SLE
 (
 	struct VPS_DataReader* reader,
 	VPS_TYPE_32S* value
 );
 
-char VPS_DataReader_Read64UBE
+VPS_TYPE_RESULT VPS_DataReader_Read64UBE
 (
 	struct VPS_DataReader* reader,
 	VPS_TYPE_64U* value
 );
 
-char VPS_DataReader_Read64ULE
+VPS_TYPE_RESULT VPS_DataReader_Read64ULE
 (
 	struct VPS_DataReader* reader,
 	VPS_TYPE_64U* value
 );
 
-char VPS_DataReader_Read64SBE
+VPS_TYPE_RESULT VPS_DataReader_Read64SBE
 (
 	struct VPS_DataReader* reader,
 	VPS_TYPE_64S* value
 );
 
-char VPS_DataReader_Read64SLE
+VPS_TYPE_RESULT VPS_DataReader_Read64SLE
 (
 	struct VPS_DataReader* reader,
 	VPS_TYPE_64S* value
 );
 
-char VPS_DataReader_ReadBytes
+VPS_TYPE_RESULT VPS_DataReader_ReadBytes
 (
 	struct VPS_DataReader* reader,
 	unsigned char* buffer,

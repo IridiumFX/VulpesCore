@@ -23,12 +23,12 @@ struct VPS_StreamReader
 	int file_handle;
 };
 
-char VPS_StreamReader_Allocate
+VPS_TYPE_RESULT VPS_StreamReader_Allocate
 (
 	struct VPS_StreamReader **item
 );
 
-char VPS_StreamReader_Construct
+VPS_TYPE_RESULT VPS_StreamReader_Construct
 (
 	struct VPS_StreamReader *item
 	, struct VPS_Data *destination_buffer
@@ -37,17 +37,17 @@ char VPS_StreamReader_Construct
 	, char take_ownership
 );
 
-char VPS_StreamReader_Deconstruct
+VPS_TYPE_RESULT VPS_StreamReader_Deconstruct
 (
 	struct VPS_StreamReader *item
 );
 
-char VPS_StreamReader_Release
+VPS_TYPE_RESULT VPS_StreamReader_Release
 (
 	struct VPS_StreamReader *item
 );
 
-char VPS_StreamReader_Read
+VPS_TYPE_RESULT VPS_StreamReader_Read
 (
 	struct VPS_StreamReader *item
 	, VPS_TYPE_SIZE new_bytes_to_read
@@ -59,7 +59,7 @@ char VPS_StreamReader_Read
 	, void *decoder_context
 );
 
-char VPS_StreamReader_Seek
+VPS_TYPE_RESULT VPS_StreamReader_Seek
 (
 	struct VPS_StreamReader *item
 	, VPS_TYPE_64S offset

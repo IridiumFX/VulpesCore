@@ -1,7 +1,7 @@
 #include <vulpes/VPS_Types.h>
 #include <vulpes/VPS_Size.h>
 
-char VPS_Size_Init
+VPS_TYPE_RESULT VPS_Size_Init
 (
 	struct VPS_Size *size
 	, VPS_TYPE_32U width
@@ -10,11 +10,11 @@ char VPS_Size_Init
 {
 	if (!size)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	size->width = width;
 	size->height = height;
 
-	return 1;
+	return VPS_OK;
 }

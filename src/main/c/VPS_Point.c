@@ -1,7 +1,7 @@
 #include <vulpes/VPS_Types.h>
 #include <vulpes/VPS_Point.h>
 
-char VPS_Point_Init
+VPS_TYPE_RESULT VPS_Point_Init
 (
 	struct VPS_Point *point
 	, VPS_TYPE_32S x
@@ -10,11 +10,11 @@ char VPS_Point_Init
 {
 	if (!point)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	point->x = x;
 	point->y = y;
 
-	return 1;
+	return VPS_OK;
 }

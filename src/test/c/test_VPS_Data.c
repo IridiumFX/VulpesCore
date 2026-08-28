@@ -17,16 +17,16 @@ static int failure_count = 0;
 static char test_data_lifecycle() {
     struct VPS_Data *data = 0;
 
-    TEST_ASSERT(VPS_Data_Allocate(&data, 128, 0));
+    TEST_ASSERT_OK(VPS_Data_Allocate(&data, 128, 0));
     TEST_ASSERT(data != 0);
 
-    TEST_ASSERT(VPS_Data_Construct(data));
+    TEST_ASSERT_OK(VPS_Data_Construct(data));
     TEST_ASSERT(data->bytes != 0);
     TEST_ASSERT(data->size == 128);
     TEST_ASSERT(data->limit == 0);
     TEST_ASSERT(data->own_bytes == 1);
 
-    TEST_ASSERT(VPS_Data_Deconstruct(data));
+    TEST_ASSERT_OK(VPS_Data_Deconstruct(data));
 
     VPS_Data_Release(data);
     return 1;
@@ -46,17 +46,17 @@ static char test_data_wrap_unwrap() {
     VPS_Data_Allocate(&data, 10, 0);
 
     // Wrap the external buffer
-    TEST_ASSERT(VPS_Data_Wrap(data, my_buffer, 32));
+    TEST_ASSERT_OK(VPS_Data_Wrap(data, my_buffer, 32));
     TEST_ASSERT(data->bytes == my_buffer);
     TEST_ASSERT(data->size == 32);
     TEST_ASSERT(data->limit == 32);
     TEST_ASSERT(data->own_bytes == 0); // Critical check
 
-    TEST_ASSERT(VPS_Data_Deconstruct(data));
+    TEST_ASSERT_OK(VPS_Data_Deconstruct(data));
 
     // Re-wrap to test unwrap
     VPS_Data_Wrap(data, my_buffer, 32);
-    TEST_ASSERT(VPS_Data_Unwrap(data, &unwrapped_buffer, &unwrapped_size));
+    TEST_ASSERT_OK(VPS_Data_Unwrap(data, &unwrapped_buffer, &unwrapped_size));
     TEST_ASSERT(unwrapped_buffer == my_buffer);
     TEST_ASSERT(unwrapped_size == 32);
     TEST_ASSERT(data->bytes == 0); // Unwrap should clear the struct
@@ -112,14 +112,14 @@ static char test_data_copy_and_seek() {
 
     // 2. Test Copy
     // Copy 4 bytes from source's position 8 ("89AB") to destination's position 0
-    TEST_ASSERT(VPS_Data_Copy(src, dest, 8, 4, 0));
+    TEST_ASSERT_OK(VPS_Data_Copy(src, dest, 8, 4, 0));
 
     // Verify destination state
     TEST_ASSERT(dest->limit == 4); // Limit should be updated to the end of the copied data
     TEST_ASSERT(strncmp((char*)dest->bytes, "89AB", 4) == 0);
 
     // Copy another 4 bytes from source's position 0 ("0123") to destination's position 4
-    TEST_ASSERT(VPS_Data_Copy(src, dest, 0, 4, 4));
+    TEST_ASSERT_OK(VPS_Data_Copy(src, dest, 0, 4, 4));
 
     // Verify destination state again
     TEST_ASSERT(dest->limit == 8); // Limit should be updated again
@@ -127,40 +127,40 @@ static char test_data_copy_and_seek() {
 
     // 3. Test Seek
     // Seek to position 6 in the destination buffer
-    TEST_ASSERT(VPS_Data_Seek(dest, 6, SEEK_SET));
+    TEST_ASSERT_OK(VPS_Data_Seek(dest, 6, SEEK_SET));
     TEST_ASSERT(dest->position == 6);
 
     // Seek forward by 1
-    TEST_ASSERT(VPS_Data_Seek(dest, 1, SEEK_CUR));
+    TEST_ASSERT_OK(VPS_Data_Seek(dest, 1, SEEK_CUR));
     TEST_ASSERT(dest->position == 7);
 
     // Seek to 3 bytes from the end
-    TEST_ASSERT(VPS_Data_Seek(dest, (VPS_TYPE_SPAN)-3, SEEK_END));
+    TEST_ASSERT_OK(VPS_Data_Seek(dest, (VPS_TYPE_SPAN)-3, SEEK_END));
     TEST_ASSERT(dest->position == 5);
 
     // Seek backward by 2
-    TEST_ASSERT(VPS_Data_Seek(dest, (VPS_TYPE_SPAN)-2, SEEK_CUR));
+    TEST_ASSERT_OK(VPS_Data_Seek(dest, (VPS_TYPE_SPAN)-2, SEEK_CUR));
     TEST_ASSERT(dest->position == 3);
 
     // 4. Test Boundary and Invalid Seeks
     // Seek to the very end (the limit)
-    TEST_ASSERT(VPS_Data_Seek(dest, 0, SEEK_END));
+    TEST_ASSERT_OK(VPS_Data_Seek(dest, 0, SEEK_END));
     TEST_ASSERT(dest->position == 8);
 
     // Seek to the very beginning
-    TEST_ASSERT(VPS_Data_Seek(dest, (VPS_TYPE_SPAN)-8, SEEK_CUR));
+    TEST_ASSERT_OK(VPS_Data_Seek(dest, (VPS_TYPE_SPAN)-8, SEEK_CUR));
     TEST_ASSERT(dest->position == 0);
 
     // Test invalid seek (past limit from current position)
-    TEST_ASSERT(!VPS_Data_Seek(dest, 9, SEEK_CUR));
+    TEST_ASSERT_FAIL(VPS_Data_Seek(dest, 9, SEEK_CUR));
     TEST_ASSERT(dest->position == 0); // Position should be unchanged
 
     // Test invalid seek (past limit from start)
-    TEST_ASSERT(!VPS_Data_Seek(dest, 9, SEEK_SET));
+    TEST_ASSERT_FAIL(VPS_Data_Seek(dest, 9, SEEK_SET));
     TEST_ASSERT(dest->position == 0); // Position should be unchanged
 
     // Test invalid seek (before start from current position)
-    TEST_ASSERT(!VPS_Data_Seek(dest, (VPS_TYPE_SPAN)-1, SEEK_CUR));
+    TEST_ASSERT_FAIL(VPS_Data_Seek(dest, (VPS_TYPE_SPAN)-1, SEEK_CUR));
     TEST_ASSERT(dest->position == 0); // Position should be unchanged
 
     VPS_Data_Release(src);
@@ -179,13 +179,13 @@ static char test_data_resize() {
     data->position = 8;
 
     // Shrink the buffer. The limit and position should be adjusted.
-    TEST_ASSERT(VPS_Data_Resize(data, 5));
+    TEST_ASSERT_OK(VPS_Data_Resize(data, 5));
     TEST_ASSERT(data->size == 5);
     TEST_ASSERT(data->limit == 5); // Limit is capped at new size
     TEST_ASSERT(data->position == 5); // Position is capped at new limit
 
     // Expand the buffer
-    TEST_ASSERT(VPS_Data_Expand(data, 15));
+    TEST_ASSERT_OK(VPS_Data_Expand(data, 15));
     TEST_ASSERT(data->size == 20);
     TEST_ASSERT(data->limit == 5); // Limit and position should be unchanged by expansion
     TEST_ASSERT(data->position == 5);
@@ -206,29 +206,29 @@ static char test_data_invariants() {
     VPS_TYPE_SIZE unwrapped_size = 0;
 
     // limit > size must be rejected
-    TEST_ASSERT(!VPS_Data_Allocate(&data, 10, 100));
+    TEST_ASSERT_FAIL(VPS_Data_Allocate(&data, 10, 100));
 
     // A zero-size allocation is still owned and can be grown later
-    TEST_ASSERT(VPS_Data_Allocate(&data, 0, 0));
+    TEST_ASSERT_OK(VPS_Data_Allocate(&data, 0, 0));
     TEST_ASSERT(data->own_bytes == 1);
-    TEST_ASSERT(VPS_Data_Resize(data, 16));
+    TEST_ASSERT_OK(VPS_Data_Resize(data, 16));
     TEST_ASSERT(data->size == 16);
     TEST_ASSERT(data->bytes != 0);
     VPS_Data_Release(data);
 
     // After Unwrap the struct must be empty, not just bytes = NULL
     data = 0;
-    TEST_ASSERT(VPS_Data_Allocate(&data, 0, 0));
-    TEST_ASSERT(VPS_Data_Wrap(data, my_buffer, 8));
+    TEST_ASSERT_OK(VPS_Data_Allocate(&data, 0, 0));
+    TEST_ASSERT_OK(VPS_Data_Wrap(data, my_buffer, 8));
     data->position = 3;
-    TEST_ASSERT(VPS_Data_Unwrap(data, &unwrapped_buffer, &unwrapped_size));
+    TEST_ASSERT_OK(VPS_Data_Unwrap(data, &unwrapped_buffer, &unwrapped_size));
     TEST_ASSERT(data->bytes == 0);
     TEST_ASSERT(data->size == 0);
     TEST_ASSERT(data->limit == 0);
     TEST_ASSERT(data->position == 0);
 
     // Wrapping NULL bytes with a nonzero size must be rejected
-    TEST_ASSERT(!VPS_Data_Wrap(data, 0, 8));
+    TEST_ASSERT_FAIL(VPS_Data_Wrap(data, 0, 8));
 
     VPS_Data_Release(data);
     return 1;
@@ -245,13 +245,13 @@ static char test_data_clone_bounds() {
     VPS_Data_Construct(src);
 
     // In-range clone works
-    TEST_ASSERT(VPS_Data_Clone(&clone, src, 8, 8));
+    TEST_ASSERT_OK(VPS_Data_Clone(&clone, src, 8, 8));
     TEST_ASSERT(clone->size == 8);
     VPS_Data_Release(clone);
 
     // Out-of-range and wrapping ranges are rejected
-    TEST_ASSERT(!VPS_Data_Clone(&clone, src, 8, 9));
-    TEST_ASSERT(!VPS_Data_Clone(&clone, src, 8, (VPS_TYPE_SIZE)-8));
+    TEST_ASSERT_FAIL(VPS_Data_Clone(&clone, src, 8, 9));
+    TEST_ASSERT_FAIL(VPS_Data_Clone(&clone, src, 8, (VPS_TYPE_SIZE)-8));
 
     VPS_Data_Release(src);
     return 1;

@@ -38,22 +38,22 @@ static char test_datareader_reads() {
     VPS_TYPE_32U val32_be, val32_le;
 
     // Read 16-bit BE (0x1234)
-    TEST_ASSERT(VPS_DataReader_Read16UBE(reader, &val16_be));
+    TEST_ASSERT_OK(VPS_DataReader_Read16UBE(reader, &val16_be));
     TEST_ASSERT(val16_be == 0x1234);
     TEST_ASSERT(source_data->position == 2);
 
     // Read 16-bit LE (0x5678)
-    TEST_ASSERT(VPS_DataReader_Read16ULE(reader, &val16_le));
+    TEST_ASSERT_OK(VPS_DataReader_Read16ULE(reader, &val16_le));
     TEST_ASSERT(val16_le == 0x5678);
     TEST_ASSERT(source_data->position == 4);
 
     // Read 32-bit BE (0x1A2B3C4D)
-    TEST_ASSERT(VPS_DataReader_Read32UBE(reader, &val32_be));
+    TEST_ASSERT_OK(VPS_DataReader_Read32UBE(reader, &val32_be));
     TEST_ASSERT(val32_be == 0x1A2B3C4D);
     TEST_ASSERT(source_data->position == 8);
 
     // Read 32-bit LE (0x56789ABC)
-    TEST_ASSERT(VPS_DataReader_Read32ULE(reader, &val32_le));
+    TEST_ASSERT_OK(VPS_DataReader_Read32ULE(reader, &val32_le));
     TEST_ASSERT(val32_le == 0x56789ABC);
     TEST_ASSERT(source_data->position == 12);
 

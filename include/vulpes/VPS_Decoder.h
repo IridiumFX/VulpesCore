@@ -10,7 +10,7 @@ struct VPS_Decoder
 	 * @param context An optional, implementation-specific context pointer.
 	 * @return 1 on success, 0 on failure.
 	 */
-	char (*decode)
+	VPS_TYPE_RESULT (*decode)
 	(
 		struct VPS_Data* source,
 		struct VPS_Data* destination,
@@ -19,15 +19,15 @@ struct VPS_Decoder
 	);
 };
 
-char VPS_Decoder_Allocate
+VPS_TYPE_RESULT VPS_Decoder_Allocate
 (
 	struct VPS_Decoder **item
 );
 
-char VPS_Decoder_Construct
+VPS_TYPE_RESULT VPS_Decoder_Construct
 (
 	struct VPS_Decoder *item,
-	char (*decode)
+	VPS_TYPE_RESULT (*decode)
 	(
 		struct VPS_Data* source,
 		struct VPS_Data* destination,
@@ -36,12 +36,12 @@ char VPS_Decoder_Construct
 	)
 );
 
-char VPS_Decoder_Deconstruct
+VPS_TYPE_RESULT VPS_Decoder_Deconstruct
 (
 	struct VPS_Decoder *item
 );
 
-char VPS_Decoder_Release
+VPS_TYPE_RESULT VPS_Decoder_Release
 (
 	struct VPS_Decoder *item
 );

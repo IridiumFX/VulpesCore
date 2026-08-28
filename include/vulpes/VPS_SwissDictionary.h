@@ -35,35 +35,35 @@ struct VPS_SwissDictionary
     VPS_TYPE_SIZE growth_factor;
     VPS_TYPE_SIZE load_percent_threshold;
 
-    char (*hash)(void *key, VPS_TYPE_SIZE *key_hash);
-    char (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering);
-    char (*key_release)(void *key);
-    char (*data_release)(void *data);
+    VPS_TYPE_RESULT (*hash)(void *key, VPS_TYPE_SIZE *key_hash);
+    VPS_TYPE_RESULT (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering);
+    VPS_TYPE_RESULT (*key_release)(void *key);
+    VPS_TYPE_RESULT (*data_release)(void *data);
 };
 
-char VPS_SwissDictionary_Allocate
+VPS_TYPE_RESULT VPS_SwissDictionary_Allocate
 (
     struct VPS_SwissDictionary **item,
     VPS_TYPE_SIZE initial_capacity
 );
 
-char VPS_SwissDictionary_Construct
+VPS_TYPE_RESULT VPS_SwissDictionary_Construct
 (
     struct VPS_SwissDictionary *item,
-    char (*hash)(void *key, VPS_TYPE_SIZE *key_hash),
-    char (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering),
-    char (*key_release)(void *key),
-    char (*data_release)(void *data),
+    VPS_TYPE_RESULT (*hash)(void *key, VPS_TYPE_SIZE *key_hash),
+    VPS_TYPE_RESULT (*key_compare)(void *key_1, void *key_2, VPS_TYPE_16S *ordering),
+    VPS_TYPE_RESULT (*key_release)(void *key),
+    VPS_TYPE_RESULT (*data_release)(void *data),
     VPS_TYPE_SIZE growth_factor,
     VPS_TYPE_SIZE load_percent_threshold
 );
 
-char VPS_SwissDictionary_Deconstruct
+VPS_TYPE_RESULT VPS_SwissDictionary_Deconstruct
 (
     struct VPS_SwissDictionary *item
 );
 
-char VPS_SwissDictionary_Release
+VPS_TYPE_RESULT VPS_SwissDictionary_Release
 (
     struct VPS_SwissDictionary *item
 );
@@ -75,14 +75,14 @@ char VPS_SwissDictionary_Find
     void **data
 );
 
-char VPS_SwissDictionary_Add
+VPS_TYPE_RESULT VPS_SwissDictionary_Add
 (
     struct VPS_SwissDictionary *item,
     void *key,
     void *data
 );
 
-char VPS_SwissDictionary_Remove
+VPS_TYPE_RESULT VPS_SwissDictionary_Remove
 (
     struct VPS_SwissDictionary *item,
     void *key

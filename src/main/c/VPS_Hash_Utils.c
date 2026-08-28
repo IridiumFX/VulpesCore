@@ -18,7 +18,7 @@
 	#define FNV_PRIME 16777619U
 #endif
 
-char VPS_Hash_Utils_String
+VPS_TYPE_RESULT VPS_Hash_Utils_String
 (
 	void* key,
 	VPS_TYPE_SIZE* key_hash
@@ -26,7 +26,7 @@ char VPS_Hash_Utils_String
 {
 	if (!key || !key_hash)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_TYPE_SIZE hash = FNV_OFFSET_BASIS;
@@ -39,10 +39,10 @@ char VPS_Hash_Utils_String
 	}
 
 	*key_hash = hash;
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Hash_Utils_Data
+VPS_TYPE_RESULT VPS_Hash_Utils_Data
 (
 	void* key,
 	VPS_TYPE_SIZE* key_hash
@@ -50,7 +50,7 @@ char VPS_Hash_Utils_Data
 {
 	if (!key || !key_hash)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	struct VPS_Data* data = (struct VPS_Data*)key;
@@ -60,7 +60,7 @@ char VPS_Hash_Utils_Data
 	// A non-empty readable window requires a backing buffer.
 	if (!data->bytes && data->limit > data->position)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// Hash the readable portion of the buffer, from position to limit.
@@ -72,10 +72,10 @@ char VPS_Hash_Utils_Data
 
 	*key_hash = hash;
 
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Hash_Utils_8U
+VPS_TYPE_RESULT VPS_Hash_Utils_8U
 (
 	void* key,
 	VPS_TYPE_SIZE* key_hash
@@ -83,7 +83,7 @@ char VPS_Hash_Utils_8U
 {
 	if (!key || !key_hash)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// Promote to 32-bit and use the 32-bit integer hash.
@@ -96,10 +96,10 @@ char VPS_Hash_Utils_8U
 	h ^= h >> 16;
 
 	*key_hash = (VPS_TYPE_SIZE)h;
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Hash_Utils_16U
+VPS_TYPE_RESULT VPS_Hash_Utils_16U
 (
 	void* key,
 	VPS_TYPE_SIZE* key_hash
@@ -107,7 +107,7 @@ char VPS_Hash_Utils_16U
 {
 	if (!key || !key_hash)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	// Promote to 32-bit and use the 32-bit integer hash.
@@ -120,10 +120,10 @@ char VPS_Hash_Utils_16U
 	h ^= h >> 16;
 
 	*key_hash = (VPS_TYPE_SIZE)h;
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Hash_Utils_32U
+VPS_TYPE_RESULT VPS_Hash_Utils_32U
 (
 	void* key,
 	VPS_TYPE_SIZE* key_hash
@@ -131,7 +131,7 @@ char VPS_Hash_Utils_32U
 {
 	if (!key || !key_hash)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_TYPE_32U h = *(VPS_TYPE_32U*)key;
@@ -144,10 +144,10 @@ char VPS_Hash_Utils_32U
 	h ^= h >> 16;
 
 	*key_hash = (VPS_TYPE_SIZE)h;
-	return 1;
+	return VPS_OK;
 }
 
-char VPS_Hash_Utils_64U
+VPS_TYPE_RESULT VPS_Hash_Utils_64U
 (
 	void* key,
 	VPS_TYPE_SIZE* key_hash
@@ -155,7 +155,7 @@ char VPS_Hash_Utils_64U
 {
 	if (!key || !key_hash)
 	{
-		return 0;
+		return VPS_FAIL;
 	}
 
 	VPS_TYPE_64U h = *(VPS_TYPE_64U*)key;
@@ -168,5 +168,5 @@ char VPS_Hash_Utils_64U
 	h ^= h >> 33;
 
 	*key_hash = (VPS_TYPE_SIZE)h;
-	return 1;
+	return VPS_OK;
 }
