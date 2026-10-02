@@ -8,7 +8,7 @@ struct VPS_Decoder
 	 * @param source The VPS_Data buffer containing the encoded data.
 	 * @param destination The VPS_Data buffer that will receive the decoded data.
 	 * @param context An optional, implementation-specific context pointer.
-	 * @return 1 on success, 0 on failure.
+	 * @return VPS_OK on success, non-zero on failure.
 	 */
 	VPS_TYPE_RESULT (*decode)
 	(

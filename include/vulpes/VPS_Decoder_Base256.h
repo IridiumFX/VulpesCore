@@ -13,7 +13,7 @@ struct VPS_Decoder;
  * This follows the alloc/construct pattern. The caller should first allocate
  * a generic VPS_Decoder using VPS_Decoder_Allocate().
  * @param decoder The pre-allocated decoder instance to construct.
- * @return 1 on success, 0 on failure.
+ * @return VPS_OK on success, non-zero on failure.
  */
 VPS_TYPE_RESULT VPS_Decoder_Base256_Construct
 (
