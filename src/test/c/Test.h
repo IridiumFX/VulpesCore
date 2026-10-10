@@ -34,6 +34,10 @@ printf("    [FAIL] Assertion failed at %s:%d: %s\n", __FILE__, __LINE__, #condit
 return 0; \
 }
 
+// Every failure is also counted here, so the test binary can exit
+// non-zero when any test fails (backlog B7): main.c defines it.
+extern int test_failures_total;
+
 #define RUN_TEST(test_func) \
 printf("  Running test: %s\n", #test_func); \
 if (test_func()) { \
@@ -41,6 +45,7 @@ printf("    [PASS]\n"); \
 success_count++; \
 } else { \
 failure_count++; \
+test_failures_total++; \
 }
 
 #define RUN_TEST_SUITE(suite_func) \

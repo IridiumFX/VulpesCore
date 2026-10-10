@@ -2,7 +2,9 @@
 
 #include "Test.h"
 
-int main(int argc, char *argv[])
+int test_failures_total = 0;
+
+int main(void)
 {
 	// Unbuffered output so a crashing test still shows how far the run got.
 	setvbuf(stdout, 0, _IONBF, 0);
@@ -24,12 +26,10 @@ int main(int argc, char *argv[])
 	RUN_TEST_SUITE(test_suite_VPS_ConcurrentDictionary);
 	RUN_TEST_SUITE(test_suite_VPS_SwissDictionary);
 
-	// Note: The success/failure counts are managed within each suite's file.
-	// A more advanced runner would aggregate these.
-
 	printf("\n=================================\n");
 	printf("      Test Suite Complete        \n");
 	printf("=================================\n");
 
-	return 0;
+	// A non-zero exit is what tells `now test` and CTest that something failed.
+	return test_failures_total ? 1 : 0;
 }
